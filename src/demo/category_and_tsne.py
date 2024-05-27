@@ -47,8 +47,8 @@ IMG_PATH = 'static/img/'
 
 plt.switch_backend('agg')
 device = 0
-tokenizer = AutoTokenizer.from_pretrained("bert-base-uncased", model_max_length = 128)
-model = AutoModel.from_pretrained("bert-base-uncased").to(device)
+# tokenizer = AutoTokenizer.from_pretrained("bert-base-uncased", model_max_length = 128)
+# model = AutoModel.from_pretrained("bert-base-uncased").to(device)
 class ref_category_desp(object):
 
     def __init__(

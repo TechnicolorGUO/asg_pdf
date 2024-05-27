@@ -24,7 +24,7 @@ no2word = {2: "two", 3: "three", 4: "four", 5: "five", 6: "six"}
 Survey_dict = views.Survey_dict
 Survey_Topic_dict = views.Survey_Topic_dict
 
-
+'''
 
 MODEL_PATH_DICT={}
 MODEL_PATH_DICT['asg_pegasus']={}
@@ -34,7 +34,7 @@ MODEL_PATH_DICT['asg_pegasus']['method']="/home/disk1/data/shuaiqi/survey_gen/mo
 MODEL_PATH_DICT['bert_base_3sent_classify']={}
 MODEL_PATH_DICT['bert_base_3sent_classify']['CSAbstruct']="/home/disk1/data/shuaiqi/survey_gen/models/classify/bert_base_3sent/CSAbstruct/checkpoint-1418"
 
-
+'''
 
 def readReference(df):
     refs = []
