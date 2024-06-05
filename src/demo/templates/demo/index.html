@@ -230,7 +230,7 @@ FONTS & ICONS
 							<div class="col-md-8">
                                 <div class="file" style="margin-top: 3px;">
                                     <span id="file_name">Please Select Reference Table from Your Computer...</span>
-                                    <input id="file" type="file" name="file" onchange="handleFiles(this.files)" multiple title="Upload your files">
+                                    <input id="file" type="file" name="file" multiple title="Upload your files">
                                 </div>
 							</div>
 							<div class="col-md-4">
@@ -570,15 +570,20 @@ FONTS & ICONS
   	{#	document.getElementById("file_name").innerHTML=file_name;#}
 
     function handleFiles(event) {
-    const files = event.target.files;
-    let fileNames = [];
-    for (let i = 0; i < files.length; i++) {
-        let filePath = files[i].name.split('\\');
-        let fileName = filePath[filePath.length - 1];
-        fileNames.push(fileName);
+        if (!event || !event.target || !event.target.files) {
+            console.error('Invalid event');
+            return;
+        }
+
+        const files = event.target.files;
+        let fileNames = [];
+        for (let i = 0; i < files.length; i++) {
+            let filePath = files[i].name.split('\\');
+            let fileName = filePath[filePath.length - 1];
+            fileNames.push(fileName);
+        }
+        document.getElementById("file_name").innerHTML = fileNames.join(', ');
     }
-    document.getElementById("file_name").innerHTML = fileNames.join(', ');
-}
 
 
     function upload_file(){
@@ -591,7 +596,10 @@ FONTS & ICONS
   		*/
 
 		var formData = new FormData();
-		formData.append(document.getElementById("file_name").innerHTML, document.getElementById("file").files[0]);
+		var files = document.getElementById("file").files;
+        for (var i = 0; i < files.length; i++) {
+            formData.append("file" + i, files[i]);
+        }
 		topic = $('#topic_input_box').val()
     	$.ajax({
 			type: "POST",
@@ -600,43 +608,22 @@ FONTS & ICONS
 			processData: false,
 			contentType: false,
 			data: formData,
-			success: function(result) {
-				if(result['topic_words'].length == 0) {
-					for (let i = 0, len = result['references'].length; i < len; i++) {
-						document.getElementById("ref_list").innerHTML += "<div class=\"input-group\"><span class=\"input-group-addon\"><input name=\"refs\" type=\"checkbox\" value="+result['ref_ids'][i] + " checked></span><a href=" + encodeURI(result['ref_links'][i])+ " target=\"_blank\" class=\"list-group-item\">" + result['references'][i] + "</a></div>";
-					}
-
-					$("#refs").attr("style","display:inline;");
+              success: function(result) {
+                // Iterate over the filenames array
+                for (let i = 0, len = result['filenames'].length; i < len; i++) {
+                  // Add each filename to the ref_list element
+                    console.log(result["filenames"])
+                  document.getElementById("ref_list").innerHTML += "<p>" + result['filenames'][i] + "</p>";
+                }
+                    $("#refs").attr("style","display:inline;");
 					$("#select_refs").attr("style","display:none;");
 					$("#input_ref_head").html("<span class=\"fas fa-tags\"></span> You can input topic by yourself:");
 					$("#refs_head").html("<span class=\"fas fa-copy\"></span> Here are the uploaded references:");
 					$("#auto_taxonomy").attr("style","display:inline;");
-
-
-
-				} else {
-					for (let i = 0, len = result['topic_words'].length; i < len; i++) {
-						document.getElementById("ref_list").innerHTML += "<h2>"+result['topic_words'][i]+"</h2>";
-						ref_titles = result['references'][i];//.substring(1, result['references'][i].length-1).split(',');
-						ref_ids = result['ref_ids'][i];//.substring(1, result['ref_ids'][i].length-1).split(',');
-						ref_links = result['ref_links'][i];//.substring(1, result['ref_links'][i].length-1).split(',');
-						for (let j = 0, len_ = ref_titles.length; j < len_; j++) {
-							document.getElementById("ref_list").innerHTML += "<div class=\"input-group\"><span class=\"input-group-addon\"><input name=\"refs\" type=\"checkbox\" value="+ref_ids[j] + " checked></span><a href=" + encodeURI(ref_links[j])+ " target=\"_blank\" class=\"list-group-item\">" + ref_titles[j] + "</a></div>";
-						}
-
-					}
-					$("#refs").attr("style","display:inline;");
-					$("#select_refs").attr("style","display:none;");
-					$("#refs_head").html("<span class=\"fas fa-copy\"></span> Here are the uploaded references:");
-					$("#generate_content_button").attr("style","display:inline; align: center; ");
-
-				}
-
-
-			},
-			error: function(jqXHR, textStatus, errorThrown){
-				alert(jqXHR.responseText);
-			}
+              },
+              error: function(jqXHR, textStatus, errorThrown){
+                alert(jqXHR.responseText);
+              }
 		});
 	}
 
