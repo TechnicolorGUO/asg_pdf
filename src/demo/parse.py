@@ -222,7 +222,7 @@ class DocumentLoading:
         title = extracted_data['title']
 
         title_new = title.strip()
-        invalid_chars = ['<', '>', ':', '"', '/', '\\', '|', '?', '*']
+        invalid_chars = ['<', '>', ':', '"', '/', '\\', '|', '?', '*',' ']
         for char in invalid_chars:
             title_new = title_new.replace(char, '_')
         # print("============================")

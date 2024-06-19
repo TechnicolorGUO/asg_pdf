@@ -36,7 +36,7 @@ from django.core.files.storage import default_storage
 
 from .parse import DocumentLoading
 
-DATA_PATH = 'static/data/'
+DATA_PATH = 'static/data/pdf/'
 TXT_PATH = 'static/reftxtpapers/overall/'
 
 Survey_dict = {
@@ -258,7 +258,7 @@ def upload_refs(request):
             if not file.name:
                 return JsonResponse({'error': 'No selected file'}, status=400)
             if file:
-                saved_file_name = default_storage.save('./src/static/data/'+file.name, file)
+                saved_file_name = default_storage.save('./src/static/data/pdf/'+file.name, file)
                 processed_file = process_file(saved_file_name)
                 filenames.append(processed_file)
                 print(filenames)

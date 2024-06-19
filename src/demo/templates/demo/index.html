@@ -39,6 +39,7 @@ STYLESHEETS
 <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
 <link rel="stylesheet" href="{% static 'css/style.css' %}">
 <link rel="stylesheet" href="{% static 'css/responsive.css' %}">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 
 
 
@@ -49,12 +50,87 @@ STYLESHEETS
 <!--<link rel="stylesheet" href= '../../../static/css/style.css'>-->
 <!--<link rel="stylesheet" href= '../../../static/css/responsive.css'>-->
 
+<div id="jsonModal" class="modal">
+	<div class="modal-content">
+	  <span class="close">&times;</span>
+	  <pre id="jsonContent"></pre>
+	</div>
+</div>
 
 <style>
 textarea {
   padding: 0;
 }
-
+.pdf-item {
+    display: flex;
+    align-items: center;
+    background: #fff;
+    border-radius: 8px;
+    padding: 10px;
+    margin: 10px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    position: relative;
+  }
+  .pdf-icon {
+    font-size: 2em;
+    color: red;
+    margin-right: 10px;
+  }
+  .pdf-details {
+    flex-grow: 1;
+  }
+  .pdf-name {
+    font-weight: bold;
+    margin: 0;
+  }
+  .pdf-info {
+    font-size: 0.9em;
+    color: #666;
+    margin: 0;
+  }
+  .pdf-remove {
+    background: none;
+    border: none;
+    color: red;
+    font-size: 1.2em;
+    cursor: pointer;
+    position: absolute;
+    top: 10px;
+    right: 10px;
+  }
+    /* Modal styling */
+	.modal {
+    display: none;
+    position: fixed;
+    z-index: 1;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgb(0,0,0);
+    background-color: rgba(0,0,0,0.4);
+    padding-top: 60px;
+  }
+  .modal-content {
+    background-color: #fefefe;
+    margin: 5% auto;
+    padding: 20px;
+    border: 1px solid #888;
+    width: 80%;
+  }
+  .close {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+  }
+  .close:hover,
+  .close:focus {
+    color: black;
+    text-decoration: none;
+    cursor: pointer;
+  }
 .file {
     position: relative;
     display: inline-block;
@@ -119,6 +195,8 @@ FONTS & ICONS
 	<script src="https://cdn.staticfile.org/twitter-bootstrap/3.3.7/js/bootstrap.min.js"></script>
 <![endif]-->
 </head>
+
+
 
 <body>
 {% block body %}
@@ -563,12 +641,6 @@ FONTS & ICONS
 
 	var topic = ""
 
-	{#function handleFiles() {#}
-  	{#	const file_ = this.file; /* now you can work with the file list */#}
-  	{#	file_str = file_.value.split('\\');#}
-  	{#	file_name = file_str[file_str.length-1];#}
-  	{#	document.getElementById("file_name").innerHTML=file_name;#}
-
     function handleFiles(event) {
         if (!event || !event.target || !event.target.files) {
             console.error('Invalid event');
@@ -586,6 +658,34 @@ FONTS & ICONS
     }
 
 
+	// Get the modal
+	var modal = document.getElementById("jsonModal");
+
+	// Get the <span> element that closes the modal
+	var span = document.getElementsByClassName("close")[0];
+
+	// When the user clicks on <span> (x), close the modal
+	span.onclick = function() {
+		modal.style.display = "none";
+	}
+
+	// When the user clicks anywhere outside of the modal, close it
+	window.onclick = function(event) {
+		if (event.target == modal) {
+			modal.style.display = "none";
+		}
+	}
+
+
+	function sanitizeFilename(filename) {
+		let title_new = filename.trim();
+		let invalid_chars = ['<', '>', ':', '"', '/', '\\', '|', '?', '*', ' '];
+		for (let char of invalid_chars) {
+			title_new = title_new.replace(new RegExp(`\\${char}`, 'g'), '_');
+		}
+		return title_new;
+	}
+
     function upload_file(){
     	/*
     	const ref_list = []
@@ -601,31 +701,67 @@ FONTS & ICONS
             formData.append("file" + i, files[i]);
         }
 		topic = $('#topic_input_box').val()
-    	$.ajax({
-			type: "POST",
-			dataType: "json",
-			url: "/upload_refs",
-			processData: false,
-			contentType: false,
-			data: formData,
-              success: function(result) {
-                // Iterate over the filenames array
-                for (let i = 0, len = result['filenames'].length; i < len; i++) {
-                  // Add each filename to the ref_list element
-                    console.log(result["filenames"])
-                  document.getElementById("ref_list").innerHTML += "<p>" + result['filenames'][i] + "</p>";
-                }
-                    $("#refs").attr("style","display:inline;");
-					$("#select_refs").attr("style","display:none;");
-					$("#input_ref_head").html("<span class=\"fas fa-tags\"></span> You can input topic by yourself:");
-					$("#refs_head").html("<span class=\"fas fa-copy\"></span> Here are the uploaded references:");
-					$("#auto_taxonomy").attr("style","display:inline;");
-              },
-              error: function(jqXHR, textStatus, errorThrown){
-                alert(jqXHR.responseText);
-              }
+		$.ajax({
+  type: "POST",
+  dataType: "json",
+  url: "/upload_refs",
+  processData: false,
+  contentType: false,
+  data: formData,
+		success: function(result) {
+			// Iterate over the filenames array
+			for (let i = 0, len = result['filenames'].length; i < len; i++) {
+			let filename = result['filenames'][i];
+			let sanitizedFilename = sanitizeFilename(filename);
+			// Create HTML structure for PDF icon with clickable link
+			let pdfHtml = `
+				<div class="pdf-item">
+				<a href="#" onclick="fetchAndDisplayJson('/static/data/txt/${sanitizedFilename}.json'); return false;">
+					<div class="pdf-icon">
+					<i class="fas fa-file-pdf"></i>
+					</div>
+					<div class="pdf-details">
+					<p class="pdf-name">${filename}</p>
+					<p class="pdf-info">PDF</p>
+					</div>
+				</a>
+				<button class="pdf-remove" onclick="removePdf(this)">×</button>
+				</div>
+			`;
+			document.getElementById("ref_list").innerHTML += pdfHtml;
+			}
+			$("#refs").attr("style","display:inline;");
+			$("#select_refs").attr("style","display:none;");
+			$("#input_ref_head").html("<span class=\"fas fa-tags\"></span> You can input topic by yourself:");
+			$("#refs_head").html("<span class=\"fas fa-copy\"></span> Here are the uploaded references:");
+			$("#auto_taxonomy").attr("style","display:inline;");
+		},
+		error: function(jqXHR, textStatus, errorThrown){
+			alert(jqXHR.responseText);
+		}
 		});
 	}
+
+	function removePdf(element) {
+		element.parentElement.remove();
+		}
+
+
+	function fetchAndDisplayJson(path) {
+			$.ajax({
+				type: "GET",
+				url: path,
+				dataType: "json",
+				success: function(data) {
+					let jsonContent = JSON.stringify(data, null, 2);
+					document.getElementById("jsonContent").textContent = jsonContent;
+					document.getElementById("jsonModal").style.display = "block";
+				},
+				error: function(jqXHR, textStatus, errorThrown) {
+					alert("Failed to load JSON data: " + errorThrown);
+				}
+			});
+		}
 
 
     function sub_topic(){
