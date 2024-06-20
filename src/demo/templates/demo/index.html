@@ -712,6 +712,7 @@ FONTS & ICONS
 			// Iterate over the filenames array
 			for (let i = 0, len = result['filenames'].length; i < len; i++) {
 			let filename = result['filenames'][i];
+			let filesize = result['filesizes'][i];
 			let sanitizedFilename = sanitizeFilename(filename);
 			// Create HTML structure for PDF icon with clickable link
 			let pdfHtml = `
@@ -722,7 +723,7 @@ FONTS & ICONS
 					</div>
 					<div class="pdf-details">
 					<p class="pdf-name">${filename}</p>
-					<p class="pdf-info">PDF</p>
+					<p class="pdf-info">${filesize} MB</p>
 					</div>
 				</a>
 				<button class="pdf-remove" onclick="removePdf(this)">×</button>

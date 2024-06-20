@@ -253,16 +253,21 @@ def upload_refs(request):
         if not request.FILES:
             return JsonResponse({'error': 'No file part'}, status=400)
         filenames = []
+        filesizes = []
         for file_name in request.FILES:
             file = request.FILES[file_name]
             if not file.name:
                 return JsonResponse({'error': 'No selected file'}, status=400)
             if file:
                 saved_file_name = default_storage.save('./src/static/data/pdf/'+file.name, file)
+                file_size = round(float(file.size) / 1024000, 2)
                 processed_file = process_file(saved_file_name)
-                filenames.append(processed_file)
+                # filenames.append(processed_file)
+                filenames.append(file.name)
+                filesizes.append(file_size)
                 print(filenames)
-        return JsonResponse({'filenames': filenames}, safe=False)
+                print(filesizes)
+        return JsonResponse({'filenames': filenames, 'filesizes': filesizes}, safe=False)
 
 
 
