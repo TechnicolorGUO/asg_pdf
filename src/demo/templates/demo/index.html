@@ -155,6 +155,17 @@ textarea {
     color: #004974;
 }
 
+.file-item {
+        display: flex;
+        align-items: center;
+        margin-bottom: 5px;
+    }
+
+.file-item i {
+	margin-right: 10px;
+	color: red; /* PDF icon color */
+}
+
 .popover{
     max-width: 100%; /* Max Width of the popover (depending on the container!) */
 }
@@ -299,26 +310,28 @@ FONTS & ICONS
 				<br>
 
 				<div class="row">
-				  <div class="col-md-12">
-					  <form action="" method="post", id="topic_input" enctype=”multipart/form-data”>
-						{% csrf_token %}
-						<input type="text" class="form-control" placeholder="Predictive Modeling on Imbalanced Data" id="topic_input_box">
-						<br>
-						<div class="row">
-							<div class="col-md-8">
-                                <div class="file" style="margin-top: 3px;">
-                                    <span id="file_name">Please Select Reference Table from Your Computer...</span>
-                                    <input id="file" type="file" name="file" multiple title="Upload your files">
-                                </div>
+					<div class="col-md-12">
+						<form action="" method="post" id="topic_input" enctype="multipart/form-data">
+							{% csrf_token %}
+							<input type="text" class="form-control" placeholder="Predictive Modeling on Imbalanced Data" id="topic_input_box">
+							<br>
+							<div class="row">
+								<div class="col-md-8">
+									<div class="file" style="margin-top: 3px;">
+										<div id="file_list">
+											<span id="file_name">Please Select Reference Table from Your Computer...</span>
+										</div>
+										<input id="file" type="file" name="file" multiple title="Upload your files" onchange="displayFileNames()">
+									</div>
+								</div>
+								<div class="col-md-4">
+									<button type="button" class="btn btn-default" onclick="upload_file()" style="margin-top: 0px; margin-left: 100px">
+										<i class="fa fa-paperclip" aria-hidden="true"></i>Upload References in Table
+									</button>
+								</div>
 							</div>
-							<div class="col-md-4">
-								<button type="button" class="btn btn-default" onclick="upload_file()" style="margin-top: 0px; margin-left: 100px">
-									<i class="fa fa-paperclip" aria-hidden="true"></i>Upload References in Table
-								</button>
-							</div>
-						</div>
-					  </form>
-				  </div>
+						</form>
+					</div>
 				</div>
 				</div>
 			</div>
@@ -686,6 +699,23 @@ FONTS & ICONS
 		return title_new;
 	}
 
+	function displayFileNames() {
+		const input = document.getElementById('file');
+		const fileList = document.getElementById('file_list');
+		fileList.innerHTML = ''; // Clear previous file names
+
+		for (let i = 0; i < input.files.length; i++) {
+			const file = input.files[i];
+			const fileItem = document.createElement('div');
+			fileItem.className = 'file-item';
+			fileItem.innerHTML = `
+				<i class="fas fa-file-pdf"></i> ${file.name}
+			`;
+			fileList.appendChild(fileItem);
+		}
+	}
+
+
     function upload_file(){
     	/*
     	const ref_list = []
@@ -716,17 +746,17 @@ FONTS & ICONS
 			let sanitizedFilename = sanitizeFilename(filename);
 			// Create HTML structure for PDF icon with clickable link
 			let pdfHtml = `
-				<div class="pdf-item">
-				<a href="#" onclick="fetchAndDisplayJson('/static/data/txt/${sanitizedFilename}.json'); return false;">
-					<div class="pdf-icon">
-					<i class="fas fa-file-pdf"></i>
+				<div class="pdf-item" style="display: flex; align-items: center; font-size: 0.8em;">
+					<div class="pdf-icon" style="flex-shrink: 0;">
+						<i class="fas fa-file-pdf"></i>
 					</div>
-					<div class="pdf-details">
-					<p class="pdf-name">${filename}</p>
-					<p class="pdf-info">${filesize} MB</p>
+					<div class="pdf-details" style="flex-grow: 1; margin-left: 10px;">
+						<a href="#" onclick="fetchAndDisplayJson('/static/data/txt/${sanitizedFilename}.json'); return false;">
+							<p class="pdf-name" style="margin: 0; font-size: 1em;">${filename}</p>
+							<p class="pdf-info" style="margin: 0; font-size: 0.9em;">${filesize} MB</p>
+						</a>
 					</div>
-				</a>
-				<button class="pdf-remove" onclick="removePdf(this)">×</button>
+					<button class="pdf-remove" onclick="removePdf(this)" style="margin-left: auto;">×</button>
 				</div>
 			`;
 			document.getElementById("ref_list").innerHTML += pdfHtml;
@@ -808,7 +838,7 @@ FONTS & ICONS
 			url: "/automatic_taxonomy",
 			data: $('#ref_form').serialize(),
 			success: function(result) {
-				// alert("Success!");
+				alert("Success!");
 				document.getElementById("legend").innerHTML += "<h2>" + $("#taxonomy_standard").val() + "</h2>";
 				for (let i = 0, len = result['colors'].length; i < len; i++) {
 					document.getElementById("legend").innerHTML += "<li class=\"list-group-item\"; style=\"color: "+ result['colors'][i]+" \">" + result['category_label'][i]+" </li>"
@@ -861,7 +891,8 @@ FONTS & ICONS
 				$("#generate_content_button").attr("style","display:inline; align: center; ");
 			},
 			error: function(jqXHR, textStatus, errorThrown){
-				alert(jqXHR.responseText);
+				// alert(jqXHR.responseText);
+				alert("!!!");
 			}
 		});
 	}

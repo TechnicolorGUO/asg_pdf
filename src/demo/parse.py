@@ -183,7 +183,9 @@ class DocumentLoading:
         text = self.clean_hyphenation_unstructured(text)
         extracted_data = self.extract_information_unstructured(text)
 
-        title = extracted_data['title']
+        # title = extracted_data['title']
+        title = file_path.split('/')[-1].split('.')[0]
+
         title_new = title.strip()
         invalid_chars = ['<', '>', ':', '"', '/', '\\', '|', '?', '*']
         for char in invalid_chars:
@@ -196,7 +198,7 @@ class DocumentLoading:
         with open(f'./src/static/data/txt/{title_new}.json', 'w', encoding='utf-8') as f:
             json.dump(extracted_data, f, ensure_ascii=False, indent=4)
         print(extracted_data)
-        return title
+        return title_new
 
     # single \n between sections
     def pypdf_loader(self, file_path):
@@ -219,7 +221,9 @@ class DocumentLoading:
         extracted_data = self.extract_information_pypdf(text)
         extracted_data = {k: self.clean_hyphenation_pypdf(v) for k, v in extracted_data.items()}
         extracted_data = {k: self.remove_newlines(v) for k, v in extracted_data.items()}
-        title = extracted_data['title']
+
+        # title = extracted_data['title']
+        title = file_path.split('/')[-1].split('.')[0]
 
         title_new = title.strip()
         invalid_chars = ['<', '>', ':', '"', '/', '\\', '|', '?', '*',' ']
@@ -232,7 +236,7 @@ class DocumentLoading:
         with open(f'./src/static/data/txt/{title_new}.json', 'w', encoding='utf-8') as f:
             json.dump(extracted_data, f, ensure_ascii=False, indent=4)
         print(extracted_data)
-        return title
+        return title_new
 
 if __name__ == "__main__":
     parser = DocumentLoading()
