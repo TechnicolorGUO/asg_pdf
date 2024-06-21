@@ -745,22 +745,24 @@ FONTS & ICONS
 			let filesize = result['filesizes'][i];
 			let sanitizedFilename = sanitizeFilename(filename);
 			let survey_id = result['survey_id'];
+			let ref_id = result['ref_ids'][i];
 
 			// Create HTML structure for PDF icon with clickable link
 			let pdfHtml = `
-				<div class="pdf-item" style="display: flex; align-items: center; font-size: 0.8em;">
-					<div class="pdf-icon" style="flex-shrink: 0;">
-						<i class="fas fa-file-pdf"></i>
-					</div>
-					<div class="pdf-details" style="flex-grow: 1; margin-left: 10px;">
-						<a href="#" onclick="fetchAndDisplayJson('/static/data/txt/${survey_id}/${sanitizedFilename}.json'); return false;">
-							<p class="pdf-name" style="margin: 0; font-size: 1em;">${filename}</p>
-							<p class="pdf-info" style="margin: 0; font-size: 0.9em;">${filesize} MB</p>
-						</a>
-					</div>
-					<button class="pdf-remove" onclick="removePdf(this)" style="margin-left: auto;">×</button>
+			<div class="pdf-item" style="display: flex; align-items: center; font-size: 0.8em;">
+				<div class="pdf-icon" style="flex-shrink: 0;">
+					<i class="fas fa-file-pdf"></i>
 				</div>
-			`;
+				<div class="pdf-details" style="flex-grow: 1; margin-left: 10px;">
+					<a href="#" onclick="fetchAndDisplayJson('/static/data/txt/${survey_id}/${sanitizedFilename}.json'); return false;">
+						<p class="pdf-name" style="margin: 0; font-size: 1em;">${filename}</p>
+						<p class="pdf-info" style="margin: 0; font-size: 0.9em;">${filesize} MB</p>
+					</a>
+				</div>
+				<button class="pdf-remove" onclick="removePdf(this)" style="margin-left: auto;">×</button>
+				<input type="hidden" name="refs" value="${ref_id}" class="pdf-hidden-input">
+			</div>
+		`;
 			document.getElementById("ref_list").innerHTML += pdfHtml;
 			}
 			$("#refs").attr("style","display:inline;");
@@ -893,8 +895,8 @@ FONTS & ICONS
 				$("#generate_content_button").attr("style","display:inline; align: center; ");
 			},
 			error: function(jqXHR, textStatus, errorThrown){
-				// alert(jqXHR.responseText);
-				alert("!!!");
+				alert(jqXHR.responseText);
+				// alert("!!!");
 			}
 		});
 	}

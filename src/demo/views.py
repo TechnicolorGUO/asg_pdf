@@ -38,9 +38,9 @@ from .parse import DocumentLoading
 import glob
 import nltk
 
-DATA_PATH = 'static/data/pdf/'
-TXT_PATH = 'static/data/txt/'
-TSV_PATH = 'static/data/tsv/'
+DATA_PATH = './src/static/data/pdf/'
+TXT_PATH = './src/static/data/txt/'
+TSV_PATH = './src/static/data/tsv/'
 
 Survey_dict = {
     '2742488' : 'Energy Efficiency in Cloud Computing',
@@ -386,10 +386,10 @@ def upload_refs(request):
             #pdb.set_trace()
             ## generate reference description
             try:
-                nltk.download('punkt')
-                nltk.download('averaged_perceptron_tagger')
-                nltk.download('wordnet')
-                nltk.download("maxent_treebank_pos_tagger")
+                # nltk.download('punkt')
+                # nltk.download('averaged_perceptron_tagger')
+                # nltk.download('wordnet')
+                # nltk.download("maxent_treebank_pos_tagger")
                 ref_desp_gen = ref_desp(input_pd)
                 description_list = ref_desp_gen.ref_desp_generator()
                 ref_desp_list=[]
@@ -454,7 +454,9 @@ def upload_refs(request):
                         "tsv_filename":output_tsv_filename,
                         'topic_words': clusters_topic_words,
                         'filenames': filenames,
-                        'filesizes': filesizes}
+                        'filesizes': filesizes,
+                        'survey_id': Global_survey_id
+                        }
 
         else:
             ref_list = {'references':[],'ref_links':[],'ref_ids':[],'is_valid_submission':is_valid_submission,"uid":uid_str,"tsv_filename":output_tsv_filename,'topic_words': [], 'filenames': filenames, 'filesizes': filesizes, 'survey_id': Global_survey_id}
@@ -958,8 +960,12 @@ def get_survey_text(refs=Global_ref_list):
 
 
 def Clustering_refs(n_clusters):
-    df = pd.read_csv(DATA_PATH + Global_survey_id + '.tsv', sep='\t', index_col=0, encoding='utf-8')
+    df = pd.read_csv(TSV_PATH + Global_survey_id + '.tsv', sep='\t', index_col=0, encoding='utf-8')
+    print(df.describe())
+    print(df)
     df_selected = df.iloc[Global_ref_list]
+    print(Global_ref_list)
+    print(df_selected)
 
     ## update cluster labels and keywords
     df_selected, colors = clustering(df_selected, n_clusters, Global_survey_id)
@@ -985,6 +991,8 @@ def Clustering_refs(n_clusters):
 
 def Clustering_refs_with_criteria(n_clusters, query):
     df = pd.read_csv(DATA_PATH + Global_survey_id + '.tsv', sep='\t', index_col=0)
+    print(df.describe())
+    print(df)
     df_selected = df.iloc[Global_ref_list]
     ## update cluster labels and keywords
     df_selected, colors = clustering_with_criteria(df_selected, n_clusters, Global_survey_id, query)

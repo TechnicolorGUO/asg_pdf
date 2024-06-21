@@ -123,7 +123,7 @@ class ref_desp(object):
             # names = ref_entry[i].split(str=".")[0]
             split_entry = ref_entry[i].split()
             if len(split_entry) < 2:
-                name = 'unknown'
+                name = ' '
             else:
                 name = ref_entry[i].split()[1]
                 name = name + ' et al. ' + '[' + str(i + 1) + '] '

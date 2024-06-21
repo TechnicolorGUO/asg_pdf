@@ -1,6 +1,6 @@
 import gensim
 import pandas as pd
-from gensim.models.doc2vec import TaggedDocument
+from gensim.models.doc2vec import TaggedDocument, Doc2Vec
 from gensim import corpora, models, similarities
 from gensim.parsing.preprocessing import strip_punctuation, remove_stopwords
 from nltk.stem.lancaster import LancasterStemmer
@@ -43,7 +43,7 @@ import torch
 from sklearn.cluster import AgglomerativeClustering
 nlp = spacy.load("en_core_sci_sm")
 
-IMG_PATH = 'static/img/'
+IMG_PATH = './src/static/img/'
 
 plt.switch_backend('agg')
 device = 0
@@ -272,6 +272,7 @@ class ref_category_desp(object):
 
 def clustering(df, n_cluster, survey_id):
     text = df['abstract']
+    print(text)
     wordstest_model = text
     test_model = [
         [wordnet_lemmatizer.lemmatize(word.lower()) for word in remove_stopwords(strip_punctuation(words)).split()] for
