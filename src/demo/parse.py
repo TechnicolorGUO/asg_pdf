@@ -167,7 +167,7 @@ class DocumentLoading:
     def remove_newlines(self, text):
         return text.replace('\n', ' ')
 
-    def unstructured_loader(self, file_path):
+    def unstructured_loader(self, file_path, survey_id):
         loader = UnstructuredPDFLoader(file_path)
         documents = loader.load()
         # print(documents[0]) # for testing
@@ -194,14 +194,14 @@ class DocumentLoading:
         # print(title_new)
 
         print(os.getcwd())
-        os.makedirs('./src/static/data/txt/', exist_ok=True)
-        with open(f'./src/static/data/txt/{title_new}.json', 'w', encoding='utf-8') as f:
+        os.makedirs(f'./src/static/data/txt/{survey_id}', exist_ok=True)
+        with open(f'./src/static/data/txt/{survey_id}/{title_new}.json', 'w', encoding='utf-8') as f:
             json.dump(extracted_data, f, ensure_ascii=False, indent=4)
         print(extracted_data)
         return title_new
 
     # single \n between sections
-    def pypdf_loader(self, file_path):
+    def pypdf_loader(self, file_path, survey_id):
         loader = PyPDFLoader(file_path)
         documents = loader.load()
         # print(documents) # for testing
@@ -231,9 +231,8 @@ class DocumentLoading:
             title_new = title_new.replace(char, '_')
         # print("============================")
         # print(title_new)
-        os.makedirs('./src/static/data/txt/', exist_ok=True)
-        print(os.getcwd())
-        with open(f'./src/static/data/txt/{title_new}.json', 'w', encoding='utf-8') as f:
+        os.makedirs(f'./src/static/data/txt/{survey_id}', exist_ok=True)
+        with open(f'./src/static/data/txt/{survey_id}/{title_new}.json', 'w', encoding='utf-8') as f:
             json.dump(extracted_data, f, ensure_ascii=False, indent=4)
         print(extracted_data)
         return title_new

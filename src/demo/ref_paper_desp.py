@@ -121,8 +121,12 @@ class ref_desp(object):
 
             # get the name of the first author
             # names = ref_entry[i].split(str=".")[0]
-            name = ref_entry[i].split()[1]
-            name = name + ' et al. ' + '[' + str(i + 1) + '] '
+            split_entry = ref_entry[i].split()
+            if len(split_entry) < 2:
+                name = 'unknown'
+            else:
+                name = ref_entry[i].split()[1]
+                name = name + ' et al. ' + '[' + str(i + 1) + '] '
 
             # delete content before the subject_word ['we ','this paper','this survey','our ']
             text = abs_summary_list[i][0]
