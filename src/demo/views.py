@@ -298,22 +298,28 @@ def upload_refs(request):
         new_file_name = Global_survey_id
         csvfile_name = new_file_name + '.'+ file_name.split('.')[-1]
 
+        # Initialize an empty DataFrame
         json_data_pd = pd.DataFrame()
-        json_files = glob.glob(f'./src/static/data/txt/{Global_survey_id}/*.json')
+
+        # Define the path to the JSON files
+        json_files_path = f'./src/static/data/txt/{Global_survey_id}/*.json'
+        json_files = glob.glob(json_files_path)
 
         ref_paper_num = len(json_files)
-        print(f'the length of the json files is {ref_paper_num}')
+        print(f'The length of the json files is {ref_paper_num}')
 
+        # Dictionary to hold title and abstract pairs
+        title_abstract_dict = {}
 
+        # Iterate over each JSON file
         for file_path in json_files:
-
             with open(file_path, 'r') as file:
                 data = json.load(file)
-            
-                # Assuming 'data' is a dictionary containing paper information
+
+                # Extract necessary information
                 title = data.get("title", "")
-                authors = data.get("authors", "")
                 abstract = data.get("abstract", "")
+                authors = data.get("authors", "")
                 introduction = data.get("introduction", "")
 
                 # Append a new row with all information for a single paper
@@ -326,8 +332,25 @@ def upload_refs(request):
                     "reference paper category label (optional)": ""
                 }, ignore_index=True)
 
+                # Add title and abstract to the dictionary
+                title_abstract_dict[title] = abstract
+
         print(json_data_pd)
+
+        # Save the DataFrame to a variable for further use
         input_pd = json_data_pd
+
+        # Define the output path for the title-abstract JSON file
+        output_path = f'./src/static/data/txt/{Global_survey_id}/title_abstract_pairs.json'
+
+        # Ensure the directory exists
+        os.makedirs(os.path.dirname(output_path), exist_ok=True)
+
+        # Save the title and abstract pairs to a JSON file
+        with open(output_path, 'w') as outfile:
+            json.dump(title_abstract_dict, outfile, indent=4, ensure_ascii=False)
+
+        print(f'Title-abstract pairs have been saved to {output_path}')
 
         if ref_paper_num>0:
                 

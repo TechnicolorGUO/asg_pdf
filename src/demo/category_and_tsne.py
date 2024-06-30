@@ -275,20 +275,27 @@ def clustering(df, n_cluster, survey_id):
     print(text)
     wordstest_model = text
     test_model = [
-        [wordnet_lemmatizer.lemmatize(word.lower()) for word in remove_stopwords(strip_punctuation(words)).split()] for
-        words in wordstest_model]
+        [
+            wordnet_lemmatizer.lemmatize(word.lower()) 
+            for word in remove_stopwords(strip_punctuation(str(words) if words is not None else "")).split()
+        ] 
+        for words in wordstest_model
+    ]
     dictionary = corpora.Dictionary(test_model, prune_at=2000000)
     corpus_model = [dictionary.doc2bow(test) for test in test_model]
     tfidf_model = models.TfidfModel(corpus_model)
     corpus_tfidf = tfidf_model[corpus_model]
+    
 
     top_words = []
     for testword in text:
-        test_bow = dictionary.doc2bow([wordnet_lemmatizer.lemmatize(word.lower()) for word in
-                                       remove_stopwords(strip_punctuation(testword)).split()])
+        test_bow = dictionary.doc2bow([
+            wordnet_lemmatizer.lemmatize(word.lower()) 
+            for word in remove_stopwords(strip_punctuation(str(testword) if testword is not None else "")).split()
+        ])
         test_tfidf = tfidf_model[test_bow]
-        top_n_words = sorted(test_tfidf, key=lambda x: x[1], reverse=True)[:5]  # [:len(test_tfidf)]
-        top_words.append([(dictionary[i[0]]) for i in top_n_words])
+        top_n_words = sorted(test_tfidf, key=lambda x: x[1], reverse=True)[:5]
+        top_words.append([dictionary[i[0]] for i in top_n_words])
 
     x_train = []
     cnt = 0
@@ -334,19 +341,18 @@ def clustering(df, n_cluster, survey_id):
         for j, r in df.iterrows():
             if r['label'] == i:
                 testword = r['top_n_words']
-                for word in [wordnet_lemmatizer.lemmatize(word.lower()) for word in
-                             remove_stopwords(strip_punctuation(testword)).split()]:
-                    try:
-                        tmp_dict[word] += 1
-                    except:
-                        tmp_dict[word] = 1
+                for word in [
+                    wordnet_lemmatizer.lemmatize(word.lower()) 
+                    for word in remove_stopwords(strip_punctuation(str(testword) if testword is not None else "")).split()
+                ]:
+                    tmp_dict[word] = tmp_dict.get(word, 0) + 1
         top_dicts.append(tmp_dict)
 
     top_list = []
     for d in top_dicts:
         tmp = sorted(d.items(), key=itemgetter(1), reverse=True)
         tmp_list = []
-        for i in [0, 1, 2]:
+        for i in range(min(3, len(tmp))):  # 确保不会超出tmp的长度
             if tmp[i][1] >= 2:
                 tmp_list.append(tmp[i][0])
         top_list.append(tmp_list)
@@ -373,7 +379,10 @@ def clustering(df, n_cluster, survey_id):
         for j, r in df.iterrows():
             if r['label'] == i:
                 testword = r['abstract']
-                for word in [word.lower() for word in remove_stopwords(strip_punctuation(testword)).split()]:
+                for word in [
+                    word.lower() 
+                    for word in remove_stopwords(strip_punctuation(str(testword) if testword is not None else "")).split()
+                ]:
                     docs[i].append(lancaster_stemmer.stem(wordnet_lemmatizer.lemmatize(word)))
                     source_docs[i].append(word)
 
@@ -430,7 +439,7 @@ def clustering(df, n_cluster, survey_id):
         for j, r in df.iterrows():
             if r['label'] == i:
                 testword = r['abstract']
-                for word in [word.lower() for word in remove_stopwords(strip_punctuation(testword)).split()]:
+                for word in [word.lower() for word in remove_stopwords(strip_punctuation(str(testword))).split()]:
                     docs[i].append(lancaster_stemmer.stem(wordnet_lemmatizer.lemmatize(word)))
                     source_docs[i].append(word)
 
