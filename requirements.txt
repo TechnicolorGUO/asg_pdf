@@ -20,7 +20,7 @@ charset-normalizer==2.0.12
 click==7.1.2
 cloudpathlib==0.16.0
 colorama==0.4.6
-conda==4.10.3
+
 
 confection==0.1.4
 conllu==4.5.2
