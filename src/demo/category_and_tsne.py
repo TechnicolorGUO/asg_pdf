@@ -825,9 +825,9 @@ def get_cluster_description(df, survey_id):
     print('='*100)
     print(description_list)
     print('*'*100)
-    for i in range(len(description_list)):
-        if description_list[i]['topic_word'] == "":
-            description_list[i]['topic_word'] = ' '.join(list(input_DF['topic_bigram'])[i][i%2].split('_'))
+    # for i in range(len(description_list)):
+    #     if description_list[i]['topic_word'] == "":
+    #         description_list[i]['topic_word'] = ' '.join(list(input_DF['topic_bigram'])[i][i%2].split('_'))
 
 
     return description_list
