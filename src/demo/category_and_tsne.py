@@ -271,8 +271,10 @@ class ref_category_desp(object):
 
 
 def clustering(df, n_cluster, survey_id):
+    wordnet_lemmatizer = WordNetLemmatizer()
     text = df['abstract']
-    print(text)
+    print("原始文本数据:", text)
+
     wordstest_model = text
     test_model = [
         [
@@ -281,37 +283,70 @@ def clustering(df, n_cluster, survey_id):
         ] 
         for words in wordstest_model
     ]
+    
+    print("预处理后的测试模型:", test_model)
+    
+    dictionary = corpora.Dictionary(test_model, prune_at=2000000)
+    print("词典内容:", dictionary.token2id)
+    
+    corpus_model = [dictionary.doc2bow(test) for test in test_model]
+    print("语料库:", corpus_model)
+    
     dictionary = corpora.Dictionary(test_model, prune_at=2000000)
     corpus_model = [dictionary.doc2bow(test) for test in test_model]
     tfidf_model = models.TfidfModel(corpus_model)
     corpus_tfidf = tfidf_model[corpus_model]
     
-
     top_words = []
     for testword in text:
-        test_bow = dictionary.doc2bow([
+        processed_testword = [
             wordnet_lemmatizer.lemmatize(word.lower()) 
             for word in remove_stopwords(strip_punctuation(str(testword) if testword is not None else "")).split()
-        ])
+        ]
+        test_bow = dictionary.doc2bow(processed_testword)
+        
+        print("处理后的测试词:", processed_testword)
+        print("测试词的BOW:", test_bow)
+        
         test_tfidf = tfidf_model[test_bow]
-        top_n_words = sorted(test_tfidf, key=lambda x: x[1], reverse=True)[:5]
-        top_words.append([dictionary[i[0]] for i in top_n_words])
+        print("测试词的TFIDF:", test_tfidf)
+        
+        if test_tfidf:
+            top_n_words = sorted(test_tfidf, key=lambda x: x[1], reverse=True)[:5]
+            print("前N个词的索引和分数:", top_n_words)
+            top_words.append([dictionary[i[0]] for i in top_n_words])
+        else:
+            top_words.append([])
+    
+    print("提取的关键词是:", top_words)
 
     x_train = []
     cnt = 0
+
+    # 创建训练数据集
     for i, text in enumerate(text):
         word_list = top_words[cnt]
-        document = TaggededDocument(word_list, tags=[i])
+        document = TaggedDocument(word_list, tags=[i])
         x_train.append(document)
         cnt += 1
 
-    min_cnt = 2 if len(df)>20 else 1
+    min_cnt = 2 if len(df) > 20 else 1
 
-    model_dm = Doc2Vec(x_train, min_count=min_cnt, size=100, sample=1e-3, workers=4)
+    # 创建 Doc2Vec 模型
+    model_dm = Doc2Vec(vector_size=100, min_count=min_cnt, sample=1e-3, workers=4)
+
+    # 构建词汇表
+    print("训练数据是: ", x_train)
+    model_dm.build_vocab(x_train)
+
+    # 训练模型
     model_dm.train(x_train, total_examples=model_dm.corpus_count, epochs=500)
+
+    # 保存模型
     model_dm.save('model_dm')
+
+    # 加载模型进行推理或进一步使用
     infered_vectors_list = []
-    # print("load doc2vec model...")
     model_dm = Doc2Vec.load("model_dm")
     # print("load train vectors...")
     i = 0
