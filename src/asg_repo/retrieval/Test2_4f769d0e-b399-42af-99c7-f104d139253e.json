@@ -1,0 +1,51 @@
+{
+    "ids": [
+        [
+            "3c71c746-bc98-4084-89ea-d3e4781b7176",
+            "0fe943e1-57a6-4306-88dc-81c0acedbb81",
+            "1b1ff33c-c911-4842-9e35-30265d9d6303",
+            "b4774637-835f-472f-a574-592eb3da3e21",
+            "520b8523-fce3-4ad6-bc55-390ecbe769f1"
+        ]
+    ],
+    "distances": [
+        [
+            1.4854135958032095,
+            1.5142532482527524,
+            1.5293770651527085,
+            1.5456484674696165,
+            1.5716240152318186
+        ]
+    ],
+    "metadatas": [
+        [
+            {
+                "doc_name": "Test2.pdf"
+            },
+            {
+                "doc_name": "Test2.pdf"
+            },
+            {
+                "doc_name": "Test2.pdf"
+            },
+            {
+                "doc_name": "Test2.pdf"
+            },
+            {
+                "doc_name": "Test2.pdf"
+            }
+        ]
+    ],
+    "embeddings": null,
+    "documents": [
+        [
+            "limited labeled data and explore how AnglE works with LLM-annotated data. Extensive experiments were conducted on various tasks including short-text STS,",
+            "text embeddings and the usefulness of angle optimization in STS. 1 I NTRODUCTION The development of text embeddings (Kiros et al., 2015; Hill et al., 2016; Conneau et al., 2017; Cer et al., 2018; Reimers & Gurevych, 2019; Gao et al., 2021) is an essential research challenge in",
+            "evaluate the STS performance of models on long texts. Long texts are prevalent in real-world applications such as financial documents, legal documents, and health reports (Li et al., 2023). To tackle",
+            "AnglE. The core idea of AnglE is to introduce angle optimization in a complex",
+            "the division rule in complex space to compute the angle difference between two text embeddings. After normalization, the angle difference becomes an objective to be optimized. It is intuitive to optimize the normalized angle difference, because if the normalized angle difference between two"
+        ]
+    ],
+    "uris": null,
+    "data": null
+}
