@@ -307,7 +307,7 @@ def clustering(df, n_cluster, survey_id):
 
     min_cnt = 2 if len(df)>20 else 1
 
-    model_dm = Doc2Vec(x_train, min_count=min_cnt, size=100, sample=1e-3, workers=4)
+    model_dm = Doc2Vec(x_train, min_count=min_cnt, vector_size=100, sample=1e-3, workers=4)
     model_dm.train(x_train, total_examples=model_dm.corpus_count, epochs=500)
     model_dm.save('model_dm')
     infered_vectors_list = []
@@ -481,8 +481,24 @@ def clustering(df, n_cluster, survey_id):
 
     ## get tsne fig
 
-    tsne = TSNE(n_components=2, init='pca', perplexity=10)
-    X_tsne = tsne.fit_transform(np.array(infered_vectors_list))
+    # tsne = TSNE(n_components=2, init='pca', perplexity=10)
+    # X_tsne = tsne.fit_transform(np.array(infered_vectors_list))
+
+    X = np.array(infered_vectors_list)
+
+    # 设置初始 perplexity
+    perplexity = 10  # 你希望的 perplexity 值
+
+    # 检查并调整 perplexity
+    if X.shape[0] < perplexity:
+        perplexity = max(1, X.shape[0] // 2)  # 或设为其他合理值
+
+    # 初始化 t-SNE
+    tsne = TSNE(n_components=2, init='pca', perplexity=perplexity, random_state=42)
+
+    # 进行 t-SNE 降维
+    X_tsne = tsne.fit_transform(X)
+
     colors = scatter(X_tsne, df['label'])
 
     plt.savefig(IMG_PATH + 'tsne_' + survey_id + '.png', dpi=800, transparent=True)
@@ -800,7 +816,7 @@ def scatter(x, colors):
     f = plt.figure(figsize=(8, 8))
     ax = plt.subplot(aspect='equal')
     sc = ax.scatter(x[:, 0], x[:, 1], lw=0, s=1,
-                    c=palette[colors.astype(np.int)])
+                    c=palette[colors.astype(np.int32)])
     c = [palette[x] if x >= 0 else (0.0, 0.0, 0.0) for x in colors]
     for i in range(x.shape[0]):
         ax.text(x[i, 0], x[i, 1], '[' + str(i) + ']', fontsize=20, color=c[i], weight='1000')

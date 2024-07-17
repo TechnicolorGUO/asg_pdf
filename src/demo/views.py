@@ -323,14 +323,29 @@ def upload_refs(request):
                 introduction = data.get("introduction", "")
 
                 # Append a new row with all information for a single paper
-                json_data_pd = json_data_pd.append({
+                # json_data_pd = json_data_pd.append({
+                #     "reference paper title": title,
+                #     "reference paper citation information (can be collected from Google scholar/DBLP)": authors,
+                #     "reference paper abstract (Please copy the text AND paste here)": abstract,
+                #     "reference paper introduction (Please copy the text AND paste here)": introduction,
+                #     "reference paper doi link (optional)": "",
+                #     "reference paper category label (optional)": ""
+                # }, ignore_index=True)
+
+                new_data = {
                     "reference paper title": title,
                     "reference paper citation information (can be collected from Google scholar/DBLP)": authors,
                     "reference paper abstract (Please copy the text AND paste here)": abstract,
                     "reference paper introduction (Please copy the text AND paste here)": introduction,
                     "reference paper doi link (optional)": "",
                     "reference paper category label (optional)": ""
-                }, ignore_index=True)
+                }
+
+                # 将新数据转换为 DataFrame
+                new_data_df = pd.DataFrame([new_data])
+
+                # 使用 pd.concat 而不是 append
+                json_data_pd = pd.concat([json_data_pd, new_data_df], ignore_index=True)
 
                 # Add title and abstract to the dictionary
                 title_abstract_dict[title] = abstract

@@ -3,7 +3,7 @@ import re
 import json
 import spacy
 # from unstructured.partition.pdf import partition_pdf
-from langchain_community.document_loaders import UnstructuredPDFLoader, PyPDFLoader
+from langchain.document_loaders import UnstructuredPDFLoader, PyPDFLoader
 
 # load spaCy model
 nlp = spacy.load("en_core_web_sm")
