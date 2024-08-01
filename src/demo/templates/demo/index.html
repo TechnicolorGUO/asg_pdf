@@ -746,6 +746,9 @@ FONTS & ICONS
 			let sanitizedFilename = sanitizeFilename(filename);
 			let survey_id = result['survey_id'];
 			let ref_id = result['ref_ids'][i];
+			let parts = filename.split('_');
+			parts.pop();
+			let cleanedFileName = parts.join('_');
 
 			// Create HTML structure for PDF icon with clickable link
 			let pdfHtml = `
@@ -755,7 +758,7 @@ FONTS & ICONS
 				</div>
 				<div class="pdf-details" style="flex-grow: 1; margin-left: 10px;">
 					<a href="#" onclick="fetchAndDisplayJson('/static/data/txt/${survey_id}/${sanitizedFilename}.json'); return false;">
-						<p class="pdf-name" style="margin: 0; font-size: 1em;">${filename}</p>
+						<p class="pdf-name" style="margin: 0; font-size: 1em;">${cleanedFileName}</p>
 						<p class="pdf-info" style="margin: 0; font-size: 0.9em;">${filesize} MB</p>
 					</a>
 				</div>
