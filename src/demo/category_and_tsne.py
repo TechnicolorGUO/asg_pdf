@@ -62,7 +62,7 @@ class ref_category_desp(object):
     def sentence_selection(self, abs, topic_list,match_ratio=30):
 
         matched_sentences = []
-
+        abs = str(abs)
         abs = abs.lower()
         sentences = nltk.tokenize.sent_tokenize(abs)
 

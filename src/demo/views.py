@@ -34,7 +34,8 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.core.files.storage import default_storage
 
-from .parse import DocumentLoading
+from .asg_loader import DocumentLoading
+from .asg_retriever import process_pdf
 import glob
 import nltk
 
@@ -247,8 +248,11 @@ def PosRank_get_top5_ngrams(input_pd):
 
 
 def process_file(file_name, survey_id):
-    parser = DocumentLoading()
-    return parser.pypdf_loader(file_name, survey_id)
+    # parser = DocumentLoading()
+    name = process_pdf(file_name, survey_id)[-1]
+    print(name)
+    print("++++++++++++++++++++++++++++++++++++++++++++++")
+    return name
 
 @csrf_exempt
 def upload_refs(request):
