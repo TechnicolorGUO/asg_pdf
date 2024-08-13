@@ -39,6 +39,8 @@ from .asg_retriever import process_pdf
 import glob
 import nltk
 
+from langchain_huggingface import HuggingFaceEmbeddings
+
 DATA_PATH = './src/static/data/pdf/'
 TXT_PATH = './src/static/data/txt/'
 TSV_PATH = './src/static/data/tsv/'
@@ -75,6 +77,7 @@ Global_ref_list = []
 Global_category_description = []
 Global_category_label = []
 Global_df_selected = ""
+embedder = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
 
 
 from demo.taskDes import absGen, introGen,introGen_supervised, methodologyGen, conclusionGen
@@ -249,13 +252,15 @@ def PosRank_get_top5_ngrams(input_pd):
 
 def process_file(file_name, survey_id):
     # parser = DocumentLoading()
-    name = process_pdf(file_name, survey_id)[-1]
+    global embedder
+    name = process_pdf(file_name, survey_id, embedder)[-1]
     print(name)
     print("++++++++++++++++++++++++++++++++++++++++++++++")
     return name
 
 @csrf_exempt
 def upload_refs(request):
+    start_time = time.time()
     if request.method == 'POST':
         if not request.FILES:
             return JsonResponse({'error': 'No file part'}, status=400)
@@ -376,7 +381,8 @@ def upload_refs(request):
             ## change col name
             try:
                 # required columns
-                input_pd["ref_title"] = input_pd["reference paper title"].apply(lambda x: clean_str(x) if len(str(x))>0 else 'Invalid title')
+                # input_pd["ref_title"] = input_pd["reference paper title"].apply(lambda x: clean_str(x) if len(str(x))>0 else 'Invalid title')
+                input_pd['ref_title'] = ['_'.join(filename.split("_")[:-1]) for filename in filenames]
                 input_pd["ref_context"] = [""]*ref_paper_num
                 input_pd["ref_entry"] = input_pd["reference paper citation information (can be collected from Google scholar/DBLP)"]
                 input_pd["abstract"] = input_pd["reference paper abstract (Please copy the text AND paste here)"].apply(lambda x: clean_str(x) if len(str(x))>0 else 'Invalid abstract')
@@ -505,7 +511,7 @@ def upload_refs(request):
             #ref_list = {'references':[],'ref_links':[],'ref_ids':[]}
         #pdb.set_trace()
         ref_list = json.dumps(ref_list)
-
+        print("--- %s seconds used in processing files ---" % (time.time() - start_time))
         return HttpResponse(ref_list)
 
 

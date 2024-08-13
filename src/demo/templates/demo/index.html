@@ -785,13 +785,19 @@ FONTS & ICONS
 		}
 
 
-	function fetchAndDisplayJson(path) {
+		function fetchAndDisplayJson(path) {
 			$.ajax({
 				type: "GET",
 				url: path,
 				dataType: "json",
 				success: function(data) {
-					let jsonContent = JSON.stringify(data, null, 2);
+					// Remove 'title' and 'introduction' fields
+					const filteredData = Object.fromEntries(
+						Object.entries(data).filter(
+							([key]) => key !== 'title' && key !== 'introduction'
+						)
+					);
+					let jsonContent = JSON.stringify(filteredData, null, 2);
 					document.getElementById("jsonContent").textContent = jsonContent;
 					document.getElementById("jsonModal").style.display = "block";
 				},
@@ -800,7 +806,6 @@ FONTS & ICONS
 				}
 			});
 		}
-
 
     function sub_topic(){
     	//alert($('#topic_form').serialize());

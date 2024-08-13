@@ -13,6 +13,7 @@ import re
 import json
 import spacy
 from langchain_community.document_loaders import UnstructuredPDFLoader, PyPDFLoader, PDFMinerLoader
+import time
 
 # from magic_pdf.rw.DiskReaderWriter import DiskReaderWriter
 
@@ -270,8 +271,11 @@ class DocumentLoading:
         '''
         Comibine extracted 4 parts into one text (unstructured loader version)
         '''
+        doc_load_time = time.time()
         loader = UnstructuredPDFLoader(file_path)
         documents = loader.load()
+
+        print("Document loading time: ", time.time() - doc_load_time)
         # print(documents[0]) # for testing
         text_blocks = [doc.page_content for doc in documents]
 

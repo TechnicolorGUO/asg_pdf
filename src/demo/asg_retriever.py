@@ -14,6 +14,7 @@ from .asg_splitter import TextSplitting
 # from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_huggingface import HuggingFaceEmbeddings
 from .asg_loader import DocumentLoading
+import time
 
 class Retriever:
     client = None
@@ -250,23 +251,27 @@ def process_pdf_old(file_path: str, query_text: str):
 # process_pdf_old("./Test2.pdf", "What method is used in the paper?")
 
 
-def process_pdf(file_path: str, survey_id: str):
+def process_pdf(file_path: str, survey_id: str, embedder: HuggingFaceEmbeddings):
     # Load and split the PDF
     # splitters = TextSplitting().pypdf_recursive_splitter(file_path)
 
+    split_start_time = time.time()
     splitters = TextSplitting().unstructured_recursive_splitter(file_path, survey_id)
 
     documents_list = [document.page_content for document in splitters]
     for i in range(len(documents_list)):
         documents_list[i] = documents_list[i].replace('\n', ' ')
-    
+    print(f"Splitting took {time.time() - split_start_time} seconds.")
+
     # Embed the documents
-    embedder = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
+    # embedder = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
+    embed_start_time = time.time()
     doc_results = embedder.embed_documents(documents_list)
     if isinstance(doc_results, torch.Tensor):
         embeddings_list = doc_results.tolist()
     else:
         embeddings_list = doc_results
+    print(f"Embedding took {time.time() - embed_start_time} seconds.")
 
     # Prepare metadata
     metadata_list = [{"doc_name": os.path.basename(file_path)} for i in range(len(documents_list))]

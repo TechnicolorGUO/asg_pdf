@@ -11,6 +11,7 @@ from langchain_experimental.text_splitter import SemanticChunker
 from langchain_openai.embeddings import OpenAIEmbeddings
 import re
 import spacy
+import time
 
 
 class TextSplitting:
@@ -49,7 +50,13 @@ class TextSplitting:
         # return splits
 
     def unstructured_recursive_splitter(self, file_path, survey_id):
+
+
+        doc_start_time = time.time()
         docs = DocumentLoading().unstructured_loader(file_path, survey_id)
+        print("Document loading time: ", time.time() - doc_start_time)
+
+        split_start_time = time.time()
         text_splitter = RecursiveCharacterTextSplitter(
             chunk_size=300,
             chunk_overlap=20,
@@ -58,6 +65,7 @@ class TextSplitting:
         )
         # print(docs) # output before splitting
         texts = text_splitter.create_documents([docs])
+        print("Splitting time: ", time.time() - split_start_time)
         return texts # output after splitting
         # print(len(texts))
         # for text in texts:
