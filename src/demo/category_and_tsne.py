@@ -270,128 +270,75 @@ class ref_category_desp(object):
         return desp_list
 
 
+from sentence_transformers import SentenceTransformer
+from umap import UMAP
+from sklearn.decomposition import PCA
+from hdbscan import HDBSCAN
+from sklearn.cluster import AgglomerativeClustering
+from sklearn.feature_extraction.text import CountVectorizer
+from bertopic.vectorizers import ClassTfidfTransformer
+from bertopic.representation import KeyBERTInspired, MaximalMarginalRelevance, OpenAI, PartOfSpeech
+from bertopic import BERTopic
+
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.manifold import TSNE
+import seaborn as sns
+
+class DimensionalityReduction:
+    def fit(self, X):
+        return self
+
+    def transform(self, X):
+        return X
+
+class ClusteringWithTopic:
+    def __init__(self, df, n_topics=3):
+        embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
+        umap_model = DimensionalityReduction()
+        hdbscan_model = AgglomerativeClustering(n_clusters=n_topics)
+        vectorizer_model = CountVectorizer(stop_words="english", min_df=1, ngram_range=(1, 2))
+        ctfidf_model = ClassTfidfTransformer(reduce_frequent_words=True)
+        keybert_model = KeyBERTInspired()
+
+        self.df = df
+        self.embeddings = embeddings = embedding_model.encode(df, show_progress_bar=True)
+
+        representation_model = {
+        "KeyBERT": keybert_model,
+        # "OpenAI": openai_model,  # Uncomment if you will use OpenAI
+        # "MMR": mmr_model,
+        # "POS": pos_model
+    }
+        self.topic_model = BERTopic(
+
+        # Pipeline models
+        embedding_model=embedding_model,
+        umap_model=umap_model,
+        hdbscan_model=hdbscan_model,
+        vectorizer_model=vectorizer_model,
+        ctfidf_model=ctfidf_model,
+        representation_model=representation_model,
+
+        # Hyperparameters
+        top_n_words=10,
+        verbose=True
+        )
+    def fit_and_get_labels(self, X):
+        topics, probs = self.topic_model.fit_transform(self.df, self.embeddings)
+        return topics
+
 def clustering(df, n_cluster, survey_id):
-    wordnet_lemmatizer = WordNetLemmatizer()
-    text = df['abstract']
-    print("原始文本数据:", text)
+    text = df['abstract'].astype(str)
+    clustering = ClusteringWithTopic(text, n_cluster)
+    df['label'] = clustering.fit_and_get_labels(text)
+    print(clustering.topic_model.get_topic_info())
+    df['top_n_words'] = clustering.topic_model.get_topic_info()['Representation'].tolist()
+    df['topic_word'] = clustering.topic_model.get_topic_info()['KeyBERT'].tolist()
 
-    wordstest_model = text
-    test_model = [
-        [
-            wordnet_lemmatizer.lemmatize(word.lower()) 
-            for word in remove_stopwords(strip_punctuation(str(words) if words is not None else "")).split()
-        ] 
-        for words in wordstest_model
-    ]
-    
-    print("预处理后的测试模型:", test_model)
-    
-    dictionary = corpora.Dictionary(test_model, prune_at=2000000)
-    print("词典内容:", dictionary.token2id)
-    
-    corpus_model = [dictionary.doc2bow(test) for test in test_model]
-    print("语料库:", corpus_model)
-    
-    dictionary = corpora.Dictionary(test_model, prune_at=2000000)
-    corpus_model = [dictionary.doc2bow(test) for test in test_model]
-    tfidf_model = models.TfidfModel(corpus_model)
-    corpus_tfidf = tfidf_model[corpus_model]
-    
-    top_words = []
-    for testword in text:
-        processed_testword = [
-            wordnet_lemmatizer.lemmatize(word.lower()) 
-            for word in remove_stopwords(strip_punctuation(str(testword) if testword is not None else "")).split()
-        ]
-        test_bow = dictionary.doc2bow(processed_testword)
-        
-        print("处理后的测试词:", processed_testword)
-        print("测试词的BOW:", test_bow)
-        
-        test_tfidf = tfidf_model[test_bow]
-        print("测试词的TFIDF:", test_tfidf)
-        
-        if test_tfidf:
-            top_n_words = sorted(test_tfidf, key=lambda x: x[1], reverse=True)[:5]
-            print("前N个词的索引和分数:", top_n_words)
-            top_words.append([dictionary[i[0]] for i in top_n_words])
-        else:
-            top_words.append([])
-    
-    print("提取的关键词是:", top_words)
 
-    x_train = []
-    cnt = 0
-
-    # 创建训练数据集
-    for i, text in enumerate(text):
-        word_list = top_words[cnt]
-        document = TaggedDocument(word_list, tags=[i])
-        x_train.append(document)
-        cnt += 1
-
-    min_cnt = 2 if len(df) > 20 else 1
-
-    model_dm = Doc2Vec(x_train, min_count=min_cnt, vector_size=100, sample=1e-3, workers=4)
-    model_dm.train(x_train, total_examples=model_dm.corpus_count, epochs=500)
-
-    # 保存模型
-    model_dm.save('model_dm')
-
-    # 加载模型进行推理或进一步使用
-    infered_vectors_list = []
-    model_dm = Doc2Vec.load("model_dm")
-    # print("load train vectors...")
-    i = 0
-    for text, label in x_train:
-        vector = model_dm.infer_vector(text)
-        infered_vectors_list.append(vector)
-        i += 1
-
-    sim_matrix = cosine_similarity(infered_vectors_list)
-    labels = SpectralClustering(n_clusters=n_cluster, gamma=0.1).fit_predict(sim_matrix)
-    df['label'] = labels
-
-    tfidf_top_words = []
-    for i in range(len(x_train)):
-        string = ""
-        text = x_train[i][0]
-        for word in text:
-            string = string + word + ' '
-        tfidf_top_words.append(string)
-    df['top_n_words'] = tfidf_top_words
-
-    ## ------ get unigram ------
-    n = df['label'].nunique()
-    top_dicts = []
-    for i in range(n):
-        tmp_dict = {}
-        for j, r in df.iterrows():
-            if r['label'] == i:
-                testword = r['top_n_words']
-                for word in [
-                    wordnet_lemmatizer.lemmatize(word.lower()) 
-                    for word in remove_stopwords(strip_punctuation(str(testword) if testword is not None else "")).split()
-                ]:
-                    tmp_dict[word] = tmp_dict.get(word, 0) + 1
-        top_dicts.append(tmp_dict)
-
-    top_list = []
-    for d in top_dicts:
-        tmp = sorted(d.items(), key=itemgetter(1), reverse=True)
-        tmp_list = []
-        for i in range(min(3, len(tmp))):  # 确保不会超出tmp的长度
-            if tmp[i][1] >= 2:
-                tmp_list.append(tmp[i][0])
-        top_list.append(tmp_list)
-
-    topic_words = []
-    for j, r in df.iterrows():
-        topic_words.append(top_list[r['label']])
-
-    df['topic_word'] = topic_words
-
-    ## ------ get bigram ------
+        ## ------ get bigram ------
     n = df['label'].nunique()
     docs = []
     for i in range(n):
@@ -506,33 +453,284 @@ def clustering(df, n_cluster, survey_id):
 
     df['topic_trigram'] = topic_words
 
-
-    ## get tsne fig
-
-    # tsne = TSNE(n_components=2, init='pca', perplexity=10)
-    # X_tsne = tsne.fit_transform(np.array(infered_vectors_list))
-
-    X = np.array(infered_vectors_list)
-
-    # 设置初始 perplexity
-    perplexity = 10  # 你希望的 perplexity 值
-
-    # 检查并调整 perplexity
+    X = np.array(clustering.embeddings)
+    perplexity = 10
     if X.shape[0] < perplexity:
-        perplexity = max(1, X.shape[0] // 2)  # 或设为其他合理值
+        perplexity = max(1, X.shape[0] // 2)   
 
-    # 初始化 t-SNE
     tsne = TSNE(n_components=2, init='pca', perplexity=perplexity, random_state=42)
-
-    # 进行 t-SNE 降维
     X_tsne = tsne.fit_transform(X)
-
     colors = scatter(X_tsne, df['label'])
 
     plt.savefig(IMG_PATH + 'tsne_' + survey_id + '.png', dpi=800, transparent=True)
 
     plt.close()
     return df, colors
+
+
+# def clustering(df, n_cluster, survey_id):
+#     wordnet_lemmatizer = WordNetLemmatizer()
+#     text = df['abstract']
+#     print("原始文本数据:", text)
+
+#     wordstest_model = text
+#     test_model = [
+#         [
+#             wordnet_lemmatizer.lemmatize(word.lower()) 
+#             for word in remove_stopwords(strip_punctuation(str(words) if words is not None else "")).split()
+#         ] 
+#         for words in wordstest_model
+#     ]
+    
+#     print("预处理后的测试模型:", test_model)
+    
+#     dictionary = corpora.Dictionary(test_model, prune_at=2000000)
+#     print("词典内容:", dictionary.token2id)
+    
+#     corpus_model = [dictionary.doc2bow(test) for test in test_model]
+#     print("语料库:", corpus_model)
+    
+#     dictionary = corpora.Dictionary(test_model, prune_at=2000000)
+#     corpus_model = [dictionary.doc2bow(test) for test in test_model]
+#     tfidf_model = models.TfidfModel(corpus_model)
+#     corpus_tfidf = tfidf_model[corpus_model]
+    
+#     top_words = []
+#     for testword in text:
+#         processed_testword = [
+#             wordnet_lemmatizer.lemmatize(word.lower()) 
+#             for word in remove_stopwords(strip_punctuation(str(testword) if testword is not None else "")).split()
+#         ]
+#         test_bow = dictionary.doc2bow(processed_testword)
+        
+#         print("处理后的测试词:", processed_testword)
+#         print("测试词的BOW:", test_bow)
+        
+#         test_tfidf = tfidf_model[test_bow]
+#         print("测试词的TFIDF:", test_tfidf)
+        
+#         if test_tfidf:
+#             top_n_words = sorted(test_tfidf, key=lambda x: x[1], reverse=True)[:5]
+#             print("前N个词的索引和分数:", top_n_words)
+#             top_words.append([dictionary[i[0]] for i in top_n_words])
+#         else:
+#             top_words.append([])
+    
+#     print("提取的关键词是:", top_words)
+
+#     x_train = []
+#     cnt = 0
+
+#     # 创建训练数据集
+#     for i, text in enumerate(text):
+#         word_list = top_words[cnt]
+#         document = TaggedDocument(word_list, tags=[i])
+#         x_train.append(document)
+#         cnt += 1
+
+#     min_cnt = 2 if len(df) > 20 else 1
+
+#     model_dm = Doc2Vec(x_train, min_count=min_cnt, vector_size=100, sample=1e-3, workers=4)
+#     model_dm.train(x_train, total_examples=model_dm.corpus_count, epochs=500)
+
+#     # 保存模型
+#     model_dm.save('model_dm')
+
+#     # 加载模型进行推理或进一步使用
+#     infered_vectors_list = []
+#     model_dm = Doc2Vec.load("model_dm")
+#     # print("load train vectors...")
+#     i = 0
+#     for text, label in x_train:
+#         vector = model_dm.infer_vector(text)
+#         infered_vectors_list.append(vector)
+#         i += 1
+
+#     sim_matrix = cosine_similarity(infered_vectors_list)
+#     labels = SpectralClustering(n_clusters=n_cluster, gamma=0.1).fit_predict(sim_matrix)
+#     df['label'] = labels
+
+#     tfidf_top_words = []
+#     for i in range(len(x_train)):
+#         string = ""
+#         text = x_train[i][0]
+#         for word in text:
+#             string = string + word + ' '
+#         tfidf_top_words.append(string)
+#     df['top_n_words'] = tfidf_top_words
+
+#     ## ------ get unigram ------
+#     n = df['label'].nunique()
+#     top_dicts = []
+#     for i in range(n):
+#         tmp_dict = {}
+#         for j, r in df.iterrows():
+#             if r['label'] == i:
+#                 testword = r['top_n_words']
+#                 for word in [
+#                     wordnet_lemmatizer.lemmatize(word.lower()) 
+#                     for word in remove_stopwords(strip_punctuation(str(testword) if testword is not None else "")).split()
+#                 ]:
+#                     tmp_dict[word] = tmp_dict.get(word, 0) + 1
+#         top_dicts.append(tmp_dict)
+
+#     top_list = []
+#     for d in top_dicts:
+#         tmp = sorted(d.items(), key=itemgetter(1), reverse=True)
+#         tmp_list = []
+#         for i in range(min(3, len(tmp))):  # 确保不会超出tmp的长度
+#             if tmp[i][1] >= 2:
+#                 tmp_list.append(tmp[i][0])
+#         top_list.append(tmp_list)
+
+#     topic_words = []
+#     for j, r in df.iterrows():
+#         topic_words.append(top_list[r['label']])
+
+#     df['topic_word'] = topic_words
+
+#     ## ------ get bigram ------
+#     n = df['label'].nunique()
+#     docs = []
+#     for i in range(n):
+#         tmp = []
+#         docs.append(tmp)
+
+#     source_docs = []
+#     for i in range(n):
+#         tmp = []
+#         source_docs.append(tmp)
+
+#     for i in range(n):
+#         for j, r in df.iterrows():
+#             if r['label'] == i:
+#                 testword = r['abstract']
+#                 for word in [
+#                     word.lower() 
+#                     for word in remove_stopwords(strip_punctuation(str(testword) if testword is not None else "")).split()
+#                 ]:
+#                     docs[i].append(lancaster_stemmer.stem(wordnet_lemmatizer.lemmatize(word)))
+#                     source_docs[i].append(word)
+
+#     bigram_docs = []
+#     for i in range(n):
+#         tmp = []
+#         for j in range(len(docs[i]) - 1):
+#             tmp.append(docs[i][j] + "_" + docs[i][j + 1])
+
+#         bigram_docs.append(tmp)
+
+#     test_model = bigram_docs
+#     dictionary = corpora.Dictionary(test_model, prune_at=2000000)
+#     corpus_model = [dictionary.doc2bow(test) for test in test_model]
+#     tfidf_model = models.TfidfModel(corpus_model)
+#     corpus_tfidf = tfidf_model[corpus_model]
+
+#     def get_source(bigram):
+#         for i in range(n):
+#             for j in range(len(docs[i]) - 1):
+#                 if bigram == docs[i][j] + "_" + docs[i][j + 1]:
+#                     return (source_docs[i][j] + "_" + source_docs[i][j + 1])
+
+#     top_list = []
+#     for testword in test_model:
+#         test_bow = dictionary.doc2bow(testword)
+#         test_tfidf = tfidf_model[test_bow]
+       
+
+#         top_n_words = sorted(test_tfidf, key=lambda x: x[1], reverse=True)[:5]
+#         # print([(get_source(dictionary[i[0]]), i[1]) for i in top_n_words])
+#         top_list.append([(get_source(dictionary[i[0]])) for i in top_n_words])
+#         # print()
+
+#     topic_words = []
+#     for j, r in df.iterrows():
+#         topic_words.append(top_list[r['label']])
+
+#     df['topic_bigram'] = topic_words
+
+#     ## ------ get trigram ------
+#     n = df['label'].nunique()
+#     docs = []
+#     for i in range(n):
+#         tmp = []
+#         docs.append(tmp)
+
+#     source_docs = []
+#     for i in range(n):
+#         tmp = []
+#         source_docs.append(tmp)
+
+#     for i in range(n):
+#         for j, r in df.iterrows():
+#             if r['label'] == i:
+#                 testword = r['abstract']
+#                 for word in [word.lower() for word in remove_stopwords(strip_punctuation(str(testword))).split()]:
+#                     docs[i].append(lancaster_stemmer.stem(wordnet_lemmatizer.lemmatize(word)))
+#                     source_docs[i].append(word)
+
+#     trigram_docs = []
+#     for i in range(n):
+#         tmp = []
+#         for j in range(len(docs[i]) - 2):
+#             tmp.append(docs[i][j] + "_" + docs[i][j + 1] + "_" + docs[i][j + 2])
+
+#         trigram_docs.append(tmp)
+
+#     test_model = trigram_docs
+#     dictionary = corpora.Dictionary(test_model, prune_at=2000000)
+#     corpus_model = [dictionary.doc2bow(test) for test in test_model]
+#     tfidf_model = models.TfidfModel(corpus_model)
+#     corpus_tfidf = tfidf_model[corpus_model]
+
+#     def get_source(trigram):
+#         for i in range(n):
+#             for j in range(len(docs[i]) - 2):
+#                 if trigram == docs[i][j] + "_" + docs[i][j + 1] + "_" + docs[i][j + 2]:
+#                     return (source_docs[i][j] + "_" + source_docs[i][j + 1] + "_" + source_docs[i][j + 2])
+
+#     top_list = []
+#     for testword in test_model:
+#         test_bow = dictionary.doc2bow(testword)
+#         test_tfidf = tfidf_model[test_bow]
+
+#         top_n_words = sorted(test_tfidf, key=lambda x: x[1], reverse=True)[:5]
+#         top_list.append([(get_source(dictionary[i[0]])) for i in top_n_words])
+#         # print([(get_source(dictionary[i[0]]), i[1]) for i in top_n_words])
+
+#     topic_words = []
+#     for j, r in df.iterrows():
+#         topic_words.append(top_list[r['label']])
+
+#     df['topic_trigram'] = topic_words
+
+
+#     ## get tsne fig
+
+#     # tsne = TSNE(n_components=2, init='pca', perplexity=10)
+#     # X_tsne = tsne.fit_transform(np.array(infered_vectors_list))
+
+#     X = np.array(infered_vectors_list)
+
+#     # 设置初始 perplexity
+#     perplexity = 10  # 你希望的 perplexity 值
+
+#     # 检查并调整 perplexity
+#     if X.shape[0] < perplexity:
+#         perplexity = max(1, X.shape[0] // 2)  # 或设为其他合理值
+
+#     # 初始化 t-SNE
+#     tsne = TSNE(n_components=2, init='pca', perplexity=perplexity, random_state=42)
+
+#     # 进行 t-SNE 降维
+#     X_tsne = tsne.fit_transform(X)
+
+#     colors = scatter(X_tsne, df['label'])
+
+#     plt.savefig(IMG_PATH + 'tsne_' + survey_id + '.png', dpi=800, transparent=True)
+
+#     plt.close()
+#     return df, colors
 
 def ngram_is_topicword(input_ngram_str):
     is_topicword = False
