@@ -334,8 +334,101 @@ def clustering(df, n_cluster, survey_id):
     clustering = ClusteringWithTopic(text, n_cluster)
     df['label'] = clustering.fit_and_get_labels(text)
     print(clustering.topic_model.get_topic_info())
-    df['top_n_words'] = clustering.topic_model.get_topic_info()['Representation'].tolist()
-    df['topic_word'] = clustering.topic_model.get_topic_info()['KeyBERT'].tolist()
+    # df['top_n_words'] = clustering.topic_model.get_topic_info()['Representation'].tolist()
+    # df['topic_word'] = clustering.topic_model.get_topic_info()['KeyBERT'].tolist()
+    wordnet_lemmatizer = WordNetLemmatizer()
+    text = df['abstract']
+    print("原始文本数据:", text)
+
+    wordstest_model = text
+    test_model = [
+        [
+            wordnet_lemmatizer.lemmatize(word.lower()) 
+            for word in remove_stopwords(strip_punctuation(str(words) if words is not None else "")).split()
+        ] 
+        for words in wordstest_model
+    ]
+    
+    print("预处理后的测试模型:", test_model)
+    dictionary = corpora.Dictionary(test_model, prune_at=2000000)
+    print("词典内容:", dictionary.token2id)
+    
+    corpus_model = [dictionary.doc2bow(test) for test in test_model]
+    print("语料库:", corpus_model)
+    
+    dictionary = corpora.Dictionary(test_model, prune_at=2000000)
+    corpus_model = [dictionary.doc2bow(test) for test in test_model]
+    tfidf_model = models.TfidfModel(corpus_model)
+    corpus_tfidf = tfidf_model[corpus_model]
+    top_words = []
+    for testword in text:
+        processed_testword = [
+            wordnet_lemmatizer.lemmatize(word.lower()) 
+            for word in remove_stopwords(strip_punctuation(str(testword) if testword is not None else "")).split()
+        ]
+        test_bow = dictionary.doc2bow(processed_testword)
+        
+        print("处理后的测试词:", processed_testword)
+        print("测试词的BOW:", test_bow)
+        
+        test_tfidf = tfidf_model[test_bow]
+        print("测试词的TFIDF:", test_tfidf)
+        
+        if test_tfidf:
+            top_n_words = sorted(test_tfidf, key=lambda x: x[1], reverse=True)[:5]
+            print("前N个词的索引和分数:", top_n_words)
+            top_words.append([dictionary[i[0]] for i in top_n_words])
+        else:
+            top_words.append([])
+    
+    print("提取的关键词是:", top_words)
+    x_train = []
+    cnt = 0
+
+    # 创建训练数据集
+    for i, text in enumerate(text):
+        word_list = top_words[cnt]
+        document = TaggedDocument(word_list, tags=[i])
+        x_train.append(document)
+        cnt += 1
+    tfidf_top_words = []
+    for i in range(len(x_train)):
+        string = ""
+        text = x_train[i][0]
+        for word in text:
+            string = string + word + ' '
+        tfidf_top_words.append(string)
+    df['top_n_words'] = tfidf_top_words
+
+    ## ------ get unigram ------
+    n = df['label'].nunique()
+    top_dicts = []
+    for i in range(n):
+        tmp_dict = {}
+        for j, r in df.iterrows():
+            if r['label'] == i:
+                testword = r['top_n_words']
+                for word in [
+                    wordnet_lemmatizer.lemmatize(word.lower()) 
+                    for word in remove_stopwords(strip_punctuation(str(testword) if testword is not None else "")).split()
+                ]:
+                    tmp_dict[word] = tmp_dict.get(word, 0) + 1
+        top_dicts.append(tmp_dict)
+
+    top_list = []
+    for d in top_dicts:
+        tmp = sorted(d.items(), key=itemgetter(1), reverse=True)
+        tmp_list = []
+        for i in range(min(3, len(tmp))):  # 确保不会超出tmp的长度
+            if tmp[i][1] >= 2:
+                tmp_list.append(tmp[i][0])
+        top_list.append(tmp_list)
+
+    topic_words = []
+    for j, r in df.iterrows():
+        topic_words.append(top_list[r['label']])
+
+    df['topic_word'] = topic_words
 
 
         ## ------ get bigram ------
