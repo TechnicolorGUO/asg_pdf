@@ -548,7 +548,7 @@ def clustering(df, n_cluster, survey_id):
 
     X = np.array(clustering.embeddings)
     perplexity = 10
-    if X.shape[0] < perplexity:
+    if X.shape[0] <= perplexity:
         perplexity = max(1, X.shape[0] // 2)   
 
     tsne = TSNE(n_components=2, init='pca', perplexity=perplexity, random_state=42)
