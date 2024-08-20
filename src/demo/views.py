@@ -16,10 +16,9 @@ import requests
 import time
 import pandas as pd
 import numpy as np
-
+import shutil
 import traceback
 
-from demo.category_and_tsne import ref_category_desp
 from demo.ref_paper_desp import ref_desp
 import hashlib
 import pdb
@@ -35,6 +34,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.core.files.storage import default_storage
 
 from .asg_loader import DocumentLoading
+# from .parse import DocumentLoading
 from .asg_retriever import process_pdf
 import glob
 import nltk
@@ -81,7 +81,7 @@ embedder = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6
 
 
 from demo.taskDes import absGen, introGen,introGen_supervised, methodologyGen, conclusionGen
-from demo.category_and_tsne import clustering, get_cluster_description, clustering_with_criteria
+from demo.category_and_tsne import clustering
 
 
 class reference_collection(object):
@@ -146,6 +146,27 @@ class PosRank(pke.unsupervised.PositionRank):
                 #if len(v.lexical_form) < minimum_word_number:
                 #    pdb.set_trace()
                 del self.candidates[k]
+
+def delete_files(request):
+    if request.method == 'POST':
+        try:
+            folders = ['./src/static/data/pdf/', './src/static/data/tsv/', './src/static/data/txt/']
+            for folder in folders:
+                for filename in os.listdir(folder):
+                    file_path = os.path.join(folder, filename)
+                    try:
+                        if os.path.isfile(file_path) or os.path.islink(file_path):
+                            os.unlink(file_path)
+                        elif os.path.isdir(file_path):
+                            shutil.rmtree(file_path)
+                    except Exception as e:
+                        return JsonResponse({'success': False, 'message': str(e)})
+            return JsonResponse({'success': True})
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': str(e)})
+
+    return JsonResponse({'success': False, 'message': 'Invalid request method'})
+
 
 def clean_str(input_str):
     input_str = str(input_str).strip().lower()
@@ -258,6 +279,10 @@ def process_file(file_name, survey_id):
     print("++++++++++++++++++++++++++++++++++++++++++++++")
     return name
 
+# def process_file(file_name, survey_id):
+#     parser = DocumentLoading()
+#     return parser.pypdf_loader(file_name, survey_id)
+
 @csrf_exempt
 def upload_refs(request):
     start_time = time.time()
@@ -359,8 +384,6 @@ def upload_refs(request):
                 # Add title and abstract to the dictionary
                 title_abstract_dict[title] = abstract
 
-        print(json_data_pd)
-
         # Save the DataFrame to a variable for further use
         input_pd = json_data_pd
 
@@ -382,7 +405,10 @@ def upload_refs(request):
             try:
                 # required columns
                 # input_pd["ref_title"] = input_pd["reference paper title"].apply(lambda x: clean_str(x) if len(str(x))>0 else 'Invalid title')
-                input_pd['ref_title'] = ['_'.join(filename.split("_")[:-1]) for filename in filenames]
+                # input_pd['ref_title'] = ['_'.join(filename.split("_")[:-1]) for filename in filenames]
+                input_pd['ref_title'] = [filename for filename in filenames]
+                print(input_pd['ref_title'])
+                print('++++++++++++++++++++++++++++++++++++++++++++++')
                 input_pd["ref_context"] = [""]*ref_paper_num
                 input_pd["ref_entry"] = input_pd["reference paper citation information (can be collected from Google scholar/DBLP)"]
                 input_pd["abstract"] = input_pd["reference paper abstract (Please copy the text AND paste here)"].apply(lambda x: clean_str(x) if len(str(x))>0 else 'Invalid abstract')
@@ -456,6 +482,7 @@ def upload_refs(request):
 
                 #output_df = input_pd[["ref_title","ref_context","ref_entry","abstract","intro","description"]]
                 output_df = input_pd[["ref_title","ref_context","ref_entry","abstract","intro","topic_word","topic_bigram","topic_trigram","description"]]
+                print(output_df)
 
                 if has_label_id == True:
                     output_df["label"]=input_pd["label"]
@@ -515,175 +542,6 @@ def upload_refs(request):
         return HttpResponse(ref_list)
 
 
-
-
-
-
-
-
-# def upload_refs(request):
-#     is_valid_submission = True
-#     has_label_id = False
-#     has_ref_link = False
-#
-#     file_dict = request.FILES
-#     if len(list(file_dict.keys()))>0:
-#         file_name = list(file_dict.keys())[0]
-#         file_obj = file_dict[file_name]
-#     else:
-#         is_valid_submission = False
-#
-#     if is_valid_submission == True:
-#         ## get uid
-#         global Global_survey_id
-#         uid_str = generate_uid()
-#         Global_survey_id = uid_str
-#         print('Uploaded survey id', Global_survey_id)
-#
-#         global Survey_dict
-#         survey_title = file_name.split('.')[-1].title()
-#         Survey_dict[uid_str] = survey_title
-#
-#         new_file_name = Global_survey_id
-#         csvfile_name = new_file_name + '.'+ file_name.split('.')[-1]
-#         with open(DATA_PATH + csvfile_name, 'wb+') as f:
-#             for chunk in file_obj.chunks():
-#                 f.write(chunk)
-#
-#         input_pd = pd.read_csv(DATA_PATH + csvfile_name, sep = ',', encoding='utf-8') #sep = '\t' #
-#         #print(input_pd.keys())
-#         #pdb.set_trace()
-#
-#         clusters_topic_words = []
-#         ref_paper_num = input_pd.shape[0]
-#         if ref_paper_num>0:
-#
-#             ## change col name
-#             try:
-#                 # required columns
-#                 input_pd["ref_title"] = input_pd["reference paper title"].apply(lambda x: clean_str(x) if len(str(x))>0 else '')
-#                 input_pd["ref_context"] = [""]*ref_paper_num
-#                 input_pd["ref_entry"] = input_pd["reference paper citation information (can be collected from Google scholar/DBLP)"]
-#                 input_pd["abstract"] = input_pd["reference paper abstract (Please copy the text AND paste here)"].apply(lambda x: clean_str(x) if len(str(x))>0 else '')
-#                 input_pd["intro"] = input_pd["reference paper introduction (Please copy the text AND paste here)"].apply(lambda x: clean_str(x) if len(str(x))>0 else '')
-#
-#                 # optional columns
-#                 input_pd["ref_link"] = input_pd["reference paper doi link (optional)"].apply(lambda x: x if len(str(x))>0 else '')
-#                 input_pd["label"] = input_pd["reference paper category label (optional)"].apply(lambda x: str(x) if len(str(x))>0 else '')
-#                 #input_pd["label"] = input_pd["reference paper category id (optional)"].apply(lambda x: str(x) if len(str(x))>0 else '')
-#             except:
-#                 print("Cannot convert the column name")
-#                 is_valid_submission = False
-#
-#             ## get cluster_num, check has_label_id
-#             stat_input_pd_labels = input_pd["label"].value_counts()
-#             #pdb.set_trace()
-#             if len(stat_input_pd_labels.keys())>1:
-#                 cluster_num = len(stat_input_pd_labels.keys())
-#                 clusters_topic_words = stat_input_pd_labels.keys().tolist()
-#                 has_label_id = True
-#             else:
-#                 #pdb.set_trace()
-#                 cluster_num = 3 # as default
-#             global Survey_n_clusters
-#             Survey_n_clusters[uid_str] = cluster_num
-#             global Survey_Topic_dict
-#             Survey_Topic_dict[uid_str] = clusters_topic_words
-#
-#             ## check has_ref_link
-#             if len(input_pd["ref_link"].value_counts().keys())>1:
-#                 has_ref_link = True
-#
-#
-#             ## get keywords
-#             try:
-#                 #pdb.set_trace()
-#                 input_pd["topic_word"],input_pd["topic_bigram"],input_pd["topic_trigram"] = ['']*ref_paper_num,['']*ref_paper_num,['']*ref_paper_num
-#                 # input_pd["topic_word"],input_pd["topic_bigram"],input_pd["topic_trigram"] = PosRank_get_top5_ngrams(input_pd)
-#                 # input_pd["topic_word"],input_pd["topic_bigram"],input_pd["topic_trigram"] = abs_top5_unigram_list_list, abs_top5_bigram_list_list, abs_top5_trigram_list_list
-#
-#                 #Survey_Topic_dict[uid_str] = input_pd["topic_word"]
-#             except:
-#                 print("Cannot select keywords")
-#                 is_valid_submission = False
-#                 #Survey_Topic_dict[uid_str] = []
-#
-#             #pdb.set_trace()
-#             ## generate reference description
-#             try:
-#                 ref_desp_gen = ref_desp(input_pd)
-#                 description_list = ref_desp_gen.ref_desp_generator()
-#                 ref_desp_list=[]
-#                 for ref_desp_set in description_list:
-#                     ref_desp_list.append(ref_desp_set[1])
-#                 #pdb.set_trace()
-#                 input_pd["description"]=ref_desp_list
-#             except:
-#                 print("Cannot generate reference paper's description")
-#                 is_valid_submission = False
-#
-#             #pdb.set_trace()
-#             ## output tsv
-#             try:
-#                 output_tsv_filename = DATA_PATH + new_file_name + '.tsv'
-#
-#                 #output_df = input_pd[["ref_title","ref_context","ref_entry","abstract","intro","description"]]
-#                 output_df = input_pd[["ref_title","ref_context","ref_entry","abstract","intro","topic_word","topic_bigram","topic_trigram","description"]]
-#
-#                 if has_label_id == True:
-#                     output_df["label"]=input_pd["label"]
-#                 else:
-#                     output_df["label"]=[""]*input_pd.shape[0]
-#                 if has_ref_link == True:
-#                     output_df["ref_link"]=input_pd["ref_link"]
-#                 else:
-#                     output_df["ref_link"]=[""]*input_pd.shape[0]
-#
-#                 #pdb.set_trace()
-#                 output_df.to_csv(output_tsv_filename, sep='\t')
-#             except:
-#                 print("Cannot output tsv")
-#                 is_valid_submission = False
-#             #Survey_dict[Global_survey_id] = topic
-#             #Survey_Topic_dict[Global_survey_id] = [topic.lower()]
-#
-#         else:
-#             # no record in submitted file
-#             is_valid_submission = False
-#
-#
-#     if is_valid_submission == True:
-#         if len(clusters_topic_words) == 0:
-#             references = output_df['ref_title'].tolist()
-#             ref_links = output_df['ref_link'].tolist()
-#             ref_ids = [i for i in range(output_df['ref_title'].shape[0])]
-#
-#         elif len(clusters_topic_words)>0:
-#             references = []
-#             ref_links = []
-#             ref_ids = []
-#             for df in output_df.groupby('label'):
-#                 references.append(list(df[1]['ref_title']))
-#                 ref_links.append(list(df[1]['ref_link']))
-#                 ref_ids.append(df[1].index.tolist())
-#                 #pdb.set_trace()
-#                 #ref_ids.append(list(df[1]['ref_id']))
-#
-#         ref_list = {'references':[i.title() for i in references],
-#                     'ref_links':ref_links,
-#                     'ref_ids':ref_ids,
-#                     'is_valid_submission':is_valid_submission,
-#                     "uid":uid_str,
-#                     "tsv_filename":output_tsv_filename,
-#                     'topic_words': clusters_topic_words}
-#
-#     else:
-#         ref_list = {'references':[],'ref_links':[],'ref_ids':[],'is_valid_submission':is_valid_submission,"uid":uid_str,"tsv_filename":output_tsv_filename,'topic_words': []}
-#         #ref_list = {'references':[],'ref_links':[],'ref_ids':[]}
-#     #pdb.set_trace()
-#     ref_list = json.dumps(ref_list)
-#     return HttpResponse(ref_list)
-
 @csrf_exempt
 def annotate_categories(request):
     # Global_survey_id = request.POST.get('uid', False)
@@ -738,11 +596,9 @@ def automatic_taxonomy(request):
 
     print('Categorization survey id', Global_survey_id)
 
-    colors, category_label, category_description =  Clustering_refs(n_clusters=3) # fix with 3
+    colors, category_label =  Clustering_refs(n_clusters=3) # fix with 3
     # colors, category_label, category_description = Clustering_refs_with_criteria(n_clusters=Survey_n_clusters[Global_survey_id], query=query)
 
-    global Global_category_description
-    Global_category_description = category_description
     global Global_category_label
     Global_category_label = category_label
 
@@ -750,9 +606,13 @@ def automatic_taxonomy(request):
     df_tmp['index'] = df_tmp.index
     ref_titles = list(df_tmp.groupby(df_tmp['label'])['ref_title'].apply(list))
     ref_indexs = list(df_tmp.groupby(df_tmp['label'])['index'].apply(list))
+
+    info = pd.read_json(f'./src/static/data/txt/{Global_survey_id}/topic.json')
+    category_label = info['KeyBERT'].to_list()
+
     cate_list = {
         'colors': colors,
-        'category_label': ['Sampling approaches', 'Algorithmic approaches', 'Meta-learning approaches'], # category_label,
+        'category_label': category_label,
         'survey_id': Global_survey_id,
         'ref_titles': [[i.title() for i in j] for j in ref_titles],
         'ref_indexs': ref_indexs
@@ -1017,45 +877,11 @@ def Clustering_refs(n_clusters):
 
     ## update cluster labels and keywords
     df_selected, colors = clustering(df_selected, n_clusters, Global_survey_id)
-    ## get description and topic word for each cluster
-    description_list = get_cluster_description(df_selected, Global_survey_id)
 
     global Global_df_selected
     Global_df_selected = df_selected
     category_description = [0]*len(colors)
     category_label = [0]*len(colors)
 
-
-    for i in range(len(colors)):
-
-        for j in description_list:
-            print(j)
-            print('\n ======= \n')
-            if j['category'] == i:
-                category_description[i] = j['category_desp']
-                category_label[i] = j['topic_word'].replace('-', ' ').title()
-    return colors, category_label, category_description
+    return colors, category_label
     # return 1,0,1
-
-def Clustering_refs_with_criteria(n_clusters, query):
-    df = pd.read_csv(DATA_PATH + Global_survey_id + '.tsv', sep='\t', index_col=0)
-    print(df.describe())
-    print(df)
-    df_selected = df.iloc[Global_ref_list]
-    ## update cluster labels and keywords
-    df_selected, colors = clustering_with_criteria(df_selected, n_clusters, Global_survey_id, query)
-    # print(colors)
-    ## get description and topic word for each cluster
-    description_list = get_cluster_description(df_selected, Global_survey_id)
-    # print(description_list)
-
-    global Global_df_selected
-    Global_df_selected = df_selected
-    category_description = [0]*len(colors)
-    category_label = [0]*len(colors)
-    for i in range(len(colors)):
-        for j in description_list:
-            if j['category'] == i:
-                category_description[i] = j['category_desp']
-                category_label[i] = j['topic_word'].replace('-', ' ').title()
-    return colors, category_label, category_description

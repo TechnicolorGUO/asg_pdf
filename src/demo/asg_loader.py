@@ -301,9 +301,9 @@ class DocumentLoading:
         title = file_path.split('/')[-1].split('.')[0]
 
         title_new = title.strip()
-        invalid_chars = ['<', '>', ':', '"', '/', '\\', '|', '?', '*',' ']
+        invalid_chars = ['<', '>', ':', '"', '/', '\\', '|', '?', '*', '_']
         for char in invalid_chars:
-            title_new = title_new.replace(char, '_')
+            title_new = title_new.replace(char, ' ')
         # print("============================")
         # print(title_new)
         os.makedirs(f'./src/static/data/txt/{survey_id}', exist_ok=True)

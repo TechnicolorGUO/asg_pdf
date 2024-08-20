@@ -302,8 +302,8 @@ FONTS & ICONS
 						<h2 align="left"><span class="fas fa-tags"></span> Please Input the Topic for Summarization: </h2>
 					</div>
 					<div class="col-md-4" style="height: 60px">
-						<button type="button" class="btn btn-primary" id="reference_template" name="reference_template" style="margin-top: 20px; margin-left: 80px">
-							<i class="fa fa-paperclip" aria-hidden="true"></i>Download Reference Template
+						<button type="button" class="btn btn-danger" id="delete_button" name="delete_button" style="margin-top: 10px; margin-left: 50px; background-color: #dc3545; border-color: #dc3545;" onclick="deleteFiles()">
+							<i class="fa fa-trash" aria-hidden="true"></i> Delete All Local References
 						</button>
 					</div>
 				</div>
@@ -642,15 +642,40 @@ FONTS & ICONS
 <script src="{% static 'scripts/evenfly.js' %}"></script>
 {% block script %}
 <script>
-	var ref_template = $("#reference_template");
-    ref_template.click(function(){
-        window.open("{% static '../../../static/upload_files/upload_file_template.csv' %}");
-    });
+	function deleteFiles() {
+		$.ajax({
+			url: '/delete_files/',
+			type: 'POST',
+			headers: {
+				'X-CSRFToken': getCookie('csrftoken')
+			},
+			success: function(data) {
+				if (data.success) {
+					alert("Delete successfully.");
+				} else {
+					alert("Delete failed.");
+				}
+			},
+			error: function(xhr, status, error) {
+				console.error('Error:', error);
+			}
+		});
+	}
 
-	var global_refs = {};
-	const inputElement = document.getElementById("file");
-	inputElement.addEventListener("change", handleFiles, false);
-
+	function getCookie(name) {
+		let cookieValue = null;
+		if (document.cookie && document.cookie !== '') {
+			const cookies = document.cookie.split(';');
+			for (let i = 0; i < cookies.length; i++) {
+				const cookie = cookies[i].trim();
+				if (cookie.substring(0, name.length + 1) === (name + '=')) {
+					cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+					break;
+				}
+			}
+		}
+		return cookieValue;
+	}
 
 	var topic = ""
 
@@ -692,9 +717,9 @@ FONTS & ICONS
 
 	function sanitizeFilename(filename) {
 		let title_new = filename.trim();
-		let invalid_chars = ['<', '>', ':', '"', '/', '\\', '|', '?', '*', ' '];
+		let invalid_chars = ['<', '>', ':', '"', '/', '\\', '|', '?', '*','_'];
 		for (let char of invalid_chars) {
-			title_new = title_new.replace(new RegExp(`\\${char}`, 'g'), '_');
+			title_new = title_new.replace(new RegExp(`\\${char}`, 'g'), ' ');
 		}
 		return title_new;
 	}
@@ -732,12 +757,12 @@ FONTS & ICONS
         }
 		topic = $('#topic_input_box').val()
 		$.ajax({
-  type: "POST",
-  dataType: "json",
-  url: "/upload_refs",
-  processData: false,
-  contentType: false,
-  data: formData,
+		type: "POST",
+		dataType: "json",
+		url: "/upload_refs",
+		processData: false,
+		contentType: false,
+		data: formData,
 		success: function(result) {
 			// Iterate over the filenames array
 			for (let i = 0, len = result['filenames'].length; i < len; i++) {
@@ -746,9 +771,10 @@ FONTS & ICONS
 			let sanitizedFilename = sanitizeFilename(filename);
 			let survey_id = result['survey_id'];
 			let ref_id = result['ref_ids'][i];
-			let parts = filename.split('_');
-			parts.pop();
-			let cleanedFileName = parts.join('_');
+			// let parts = filename.split(' ');
+			// parts.pop();
+			// let cleanedFileName = parts.join(' ');
+			let cleanedFileName = filename;
 
 			// Create HTML structure for PDF icon with clickable link
 			let pdfHtml = `
@@ -757,8 +783,8 @@ FONTS & ICONS
 					<i class="fas fa-file-pdf"></i>
 				</div>
 				<div class="pdf-details" style="flex-grow: 1; margin-left: 10px;">
-					<a href="#" onclick="fetchAndDisplayJson('/static/data/txt/${survey_id}/${sanitizedFilename}.json'); return false;">
-						<p class="pdf-name" style="margin: 0; font-size: 1em;">${cleanedFileName}</p>
+					<a href="#" onclick="fetchAndDisplayJson('/static/data/txt/${survey_id}/${filename}.json'); return false;">
+						<p class="pdf-name" style="margin: 0; font-size: 1em;">${sanitizedFilename}</p>
 						<p class="pdf-info" style="margin: 0; font-size: 0.9em;">${filesize} MB</p>
 					</a>
 				</div>
