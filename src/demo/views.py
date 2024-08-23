@@ -632,6 +632,9 @@ def automatic_taxonomy(request):
         )
         print(outputs[0]["generated_text"][-1]['content'])
         category_label_summarized[i] = str(outputs[0]["generated_text"][-1]['content'])
+    print(category_label)
+    print('+++++++++++++++++++++++++++++')
+    print(category_label_summarized)
 
 
     cate_list = {
