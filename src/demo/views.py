@@ -639,7 +639,7 @@ def automatic_taxonomy(request):
 
     cate_list = {
         'colors': colors,
-        'category_label': category_label_summarized,
+        'category_label': category_label,
         'survey_id': Global_survey_id,
         'ref_titles': [[i.title() for i in j] for j in ref_titles],
         'ref_indexs': ref_indexs
