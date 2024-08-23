@@ -631,7 +631,7 @@ def automatic_taxonomy(request):
             max_new_tokens=256,
         )
         print(outputs[0]["generated_text"][-1]['content'])
-        category_label_summarized.append(outputs[0]["generated_text"][-1]['content'])
+        category_label_summarized.append(outputs[0]["generated_text"][-1]['content'].replace("'",'').replace('"','').strip())
     print(category_label)
     print('+++++++++++++++++++++++++++++')
     print(category_label_summarized)
