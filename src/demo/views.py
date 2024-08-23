@@ -611,7 +611,7 @@ def automatic_taxonomy(request):
 
     info = pd.read_json(f'./src/static/data/txt/{Global_survey_id}/topic.json')
     category_label = info['KeyBERT'].to_list()
-    category_label_summarized=category_label.copy()
+    category_label_summarized=[" "]*len(category_label)
 
     model_id = "meta-llama/Meta-Llama-3.1-8B-Instruct"
     pipeline = transformers.pipeline(
@@ -639,7 +639,7 @@ def automatic_taxonomy(request):
 
     cate_list = {
         'colors': colors,
-        'category_label': category_label,
+        'category_label': category_label_summarized,
         'survey_id': Global_survey_id,
         'ref_titles': [[i.title() for i in j] for j in ref_titles],
         'ref_indexs': ref_indexs
