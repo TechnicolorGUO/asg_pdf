@@ -40,6 +40,8 @@ import glob
 import nltk
 
 from langchain_huggingface import HuggingFaceEmbeddings
+import transformers
+import torch
 
 DATA_PATH = './src/static/data/pdf/'
 TXT_PATH = './src/static/data/txt/'
@@ -609,10 +611,32 @@ def automatic_taxonomy(request):
 
     info = pd.read_json(f'./src/static/data/txt/{Global_survey_id}/topic.json')
     category_label = info['KeyBERT'].to_list()
+    category_label_summarized=category_label.copy()
+
+    model_id = "meta-llama/Meta-Llama-3.1-8B-Instruct"
+    pipeline = transformers.pipeline(
+        "text-generation",
+        model=model_id,
+        model_kwargs={"torch_dtype": torch.bfloat16},
+        token = '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',
+        device_map="auto",
+    )
+    for i in range(len(category_label)):
+        messages = [
+            {"role": "system", "content": "You are a summarizer and your task is to summarize the following keywords into one phrase."},
+            {"role": "user", "content": category_label[i]},
+        ]
+        outputs = pipeline(
+            messages,
+            max_new_tokens=256,
+        )
+        print(outputs[0]["generated_text"][-1]['content'])
+        category_label_summarized[i] = outputs[0]["generated_text"][-1]['content']
+
 
     cate_list = {
         'colors': colors,
-        'category_label': category_label,
+        'category_label': category_label_summarized,
         'survey_id': Global_survey_id,
         'ref_titles': [[i.title() for i in j] for j in ref_titles],
         'ref_indexs': ref_indexs
@@ -871,8 +895,9 @@ def Clustering_refs(n_clusters):
     df = pd.read_csv(TSV_PATH + Global_survey_id + '.tsv', sep='\t', index_col=0, encoding='utf-8')
     print(df.describe())
     print(df)
-    df_selected = df.iloc[Global_ref_list]
     print(Global_ref_list)
+    df_selected = df.iloc[Global_ref_list]
+    
     print(df_selected)
 
     ## update cluster labels and keywords
