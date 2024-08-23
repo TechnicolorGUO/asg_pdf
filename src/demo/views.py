@@ -611,7 +611,7 @@ def automatic_taxonomy(request):
 
     info = pd.read_json(f'./src/static/data/txt/{Global_survey_id}/topic.json')
     category_label = info['KeyBERT'].to_list()
-    category_label_summarized=[" "]*len(category_label)
+    category_label_summarized=[]
 
     model_id = "meta-llama/Meta-Llama-3.1-8B-Instruct"
     pipeline = transformers.pipeline(
@@ -630,10 +630,8 @@ def automatic_taxonomy(request):
             messages,
             max_new_tokens=256,
         )
-        temp=[]
-        temp.append(outputs[0]["generated_text"][-1]['content'])
         print(outputs[0]["generated_text"][-1]['content'])
-        category_label_summarized[i] = temp
+        category_label_summarized.append(outputs[0]["generated_text"][-1]['content'])
     print(category_label)
     print('+++++++++++++++++++++++++++++')
     print(category_label_summarized)
