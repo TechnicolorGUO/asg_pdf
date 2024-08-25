@@ -2,7 +2,7 @@
 0. The deletion function does not work. 多个相同检索结果是因为chroma中数据删除不干净 需手动删除
 1. advanced level retriever not implemented yet (HyDE)
 2. 将提取信息load到json的部分代码集成进建立向量数据库的函数process_pdf
-3*. HyDE方面自己写一个预期的回答query能产生的虚拟文档 在此基础上调整HyDE效果
+3*. HyDE方面调查多篇论文 找到其中描述方法的共性 反推通用的描述方法的语句格式 基于此调整预期query能产生的虚拟文档 在此基础上调整HyDE效果
 '''
 import torch
 import uuid
@@ -252,8 +252,8 @@ def process_pdf_old(file_path: str, query_text: str):
 
 def process_pdf(file_path: str):
     # Load and split the PDF
-    # splitters = TextSplitting().pypdf_recursive_splitter(file_path)
-    splitters = TextSplitting().unstructured_recursive_splitter(file_path)
+    # splitters = TextSplitting().unstructured_recursive_splitter(file_path)
+    splitters = TextSplitting().mineru_recursive_splitter(file_path)
 
     documents_list = [document.page_content for document in splitters]
     for i in range(len(documents_list)):
@@ -307,17 +307,112 @@ def query_embeddings(collection_name: str, embeddings_list: list, documents_list
     return context
 
 context = query_embeddings(os.path.basename("./Test2.pdf").split('.')[0], embeddings_list, documents_list, metadata_list, "What algorithmic methods are used in the paper?")
+
+# 直接使用HyDE作为query
+# context = query_embeddings(os.path.basename("./Test2.pdf").split('.')[0], embeddings_list, documents_list, metadata_list, "To answer this question, I need to know which specific paper you are referring to. Please provide the title or a brief description of the paper's main content so that I can give you a more precise answer. Typically, research papers might involve the following algorithmic methods: Machine Learning Algorithms: Such as linear regression, logistic regression, decision trees, random forests, support vector machines, k-nearest neighbors, neural networks, etc. Deep Learning Algorithms: Convolutional neural networks (CNNs), recurrent neural networks (RNNs), long short-term memory networks (LSTMs), generative adversarial networks (GANs), etc. Optimization Algorithms: Gradient descent, stochastic gradient descent, Newton's method, genetic algorithms, etc. Graph Algorithms: Depth-first search, breadth-first search, shortest path algorithms (like Dijkstra's algorithm), PageRank, etc. Statistical and Data Analysis Methods: Principal component analysis (PCA), t-distributed stochastic neighbor embedding (t-SNE), clustering analysis (such as k-means, hierarchical clustering), etc. If you can provide more details, I will be able to pinpoint the specific algorithmic methods used in the paper.")
 print(context)
 
-# Question format? If the questions follow only a few fixed formats, you can write the Hyde documents yourself.
+# Question format? If the questions follow only a few fixed formats, you can write the Hyde documents yourself. But in this way, we can just use the fixed format of query (instead of original query) to generate the documents.
 # This can save time asking the LLM and provide more accurate results.
+# Essentially, it becomes a kind of prompt-based generation.
 
-# GPT4o HyDE
-# To answer this question, I need to know which specific paper you are referring to. Please provide the title or a brief description of the paper's main content so that I can give you a more precise answer. Typically, research papers might involve the following algorithmic methods:
+# Ask GPT4o to answer the query as a Hypothetical Document
+'''
+To answer this question, I need to know which specific paper you are referring to. Please provide the title or a brief description of the paper's main content so that I can give you a more precise answer. Typically, research papers might involve the following algorithmic methods:
 
-# Machine Learning Algorithms: Such as linear regression, logistic regression, decision trees, random forests, support vector machines, k-nearest neighbors, neural networks, etc.
-# Deep Learning Algorithms: Convolutional neural networks (CNNs), recurrent neural networks (RNNs), long short-term memory networks (LSTMs), generative adversarial networks (GANs), etc.
-# Optimization Algorithms: Gradient descent, stochastic gradient descent, Newton's method, genetic algorithms, etc.
-# Graph Algorithms: Depth-first search, breadth-first search, shortest path algorithms (like Dijkstra's algorithm), PageRank, etc.
-# Statistical and Data Analysis Methods: Principal component analysis (PCA), t-distributed stochastic neighbor embedding (t-SNE), clustering analysis (such as k-means, hierarchical clustering), etc.
-# If you can provide more details, I will be able to pinpoint the specific algorithmic methods used in the paper.
+Machine Learning Algorithms: Such as linear regression, logistic regression, decision trees, random forests, support vector machines, k-nearest neighbors, neural networks, etc.
+Deep Learning Algorithms: Convolutional neural networks (CNNs), recurrent neural networks (RNNs), long short-term memory networks (LSTMs), generative adversarial networks (GANs), etc.
+Optimization Algorithms: Gradient descent, stochastic gradient descent, Newton's method, genetic algorithms, etc.
+Graph Algorithms: Depth-first search, breadth-first search, shortest path algorithms (like Dijkstra's algorithm), PageRank, etc.
+Statistical and Data Analysis Methods: Principal component analysis (PCA), t-distributed stochastic neighbor embedding (t-SNE), clustering analysis (such as k-means, hierarchical clustering), etc.
+If you can provide more details, I will be able to pinpoint the specific algorithmic methods used in the paper.
+'''
+
+# Ask GPT4o to generate a Hypothetical Document
+'''
+Hypothetical Document for Algorithmic Methods in Research Papers
+Overview of Algorithmic Methods
+Research papers in computer science and data science often employ a variety of algorithmic methods to solve problems, analyze data, and validate hypotheses. These methods can be broadly categorized into several groups:
+
+Machine Learning Algorithms
+
+Linear Regression: Used for predicting continuous values based on input features.
+Logistic Regression: Used for binary classification problems.
+Decision Trees: A tree-like model used for both classification and regression tasks.
+Random Forests: An ensemble method that uses multiple decision trees to improve accuracy.
+Support Vector Machines (SVM): A powerful classifier that finds the hyperplane that best separates different classes.
+k-Nearest Neighbors (k-NN): A simple, instance-based learning algorithm for classification and regression.
+Deep Learning Algorithms
+
+Convolutional Neural Networks (CNNs): Primarily used for image recognition and processing tasks.
+Recurrent Neural Networks (RNNs): Ideal for sequential data and time series analysis.
+Long Short-Term Memory Networks (LSTMs): A type of RNN designed to remember long-term dependencies.
+Generative Adversarial Networks (GANs): Used for generating new data samples similar to a given dataset.
+Optimization Algorithms
+
+Gradient Descent: A fundamental algorithm for minimizing functions in machine learning models.
+Stochastic Gradient Descent (SGD): A variant of gradient descent that updates parameters using a random subset of data.
+Newton's Method: An optimization algorithm that uses second-order derivatives.
+Genetic Algorithms: Inspired by the process of natural selection, used for optimization problems.
+Graph Algorithms
+
+Depth-First Search (DFS): An algorithm for traversing or searching tree or graph data structures.
+Breadth-First Search (BFS): Another graph traversal method that explores neighbors level by level.
+Shortest Path Algorithms: Including Dijkstra's algorithm and Bellman-Ford algorithm, used to find the shortest path in a graph.
+PageRank: An algorithm originally used by Google Search to rank web pages.
+Statistical and Data Analysis Methods
+
+Principal Component Analysis (PCA): A dimensionality reduction technique that transforms data to new coordinates.
+t-Distributed Stochastic Neighbor Embedding (t-SNE): Used for visualizing high-dimensional data.
+Clustering Analysis: Including k-means and hierarchical clustering, used to group similar data points together.
+Example Applications in Papers
+Linear Regression: Often used in economic papers to predict financial metrics.
+CNNs: Commonly found in papers related to image classification and computer vision.
+LSTMs: Widely used in papers dealing with natural language processing and time series forecasting.
+PCA: Frequently used in papers focusing on data preprocessing and feature extraction.
+By understanding the algorithmic methods used in a paper, one can gain deeper insights into the techniques and tools employed by researchers to achieve their results. This knowledge can also guide further research and application development in similar fields.
+'''
+
+
+
+
+
+
+
+# Here are the identified sentences related to methods and approaches used in the four provided documents:
+
+# 1. **Sampling and Algorithmic Approaches**:
+#    - "For the sampling approaches, the policy network is trained for {2,3,4} epochs, with learning rate as 2e-6 and batch size as {8,16}."
+#    - "In the implementation of the BM25-based retriever, the textboxes from searched URLs are parsed from HTML code. We compute BM25 scores between the paragraph from each textbox and the query following the scikit-learn package, then keep those with higher scores until the reserved context reaches a max length."
+#    - "Our proposed methods are evaluated on knowledge-intensive downstream tasks including open-domain QA (HotpoQA, AmbigNQ, PopQA) and multiple choice QA (MMLU)."
+
+# 2. **Meta-learning Approaches**:
+#    - "We apply a small, trainable language model to perform the rewriting step, denoted as the rewriter. The rewriter is trained by reinforcement learning using the LLM performance as a reward, learning to adapt the retrieval query to improve the reader on downstream tasks."
+#    - "The rewriter model after warm-up shows modest performance, which depends on the pseudo data quality and rewriter capability."
+
+# 3. **Strategy and Technique References**:
+#    - "Our novel ESE model allows for scalable embeddings in both model depth and embedding size."
+#    - "We propose a trainable scheme for our rewrite-retrieve-read framework. The black-box retriever and the reader form a frozen system."
+
+# 4. **Graph-based Approaches**:
+#    - "The LOAD model for the representation and indexing of named entities for the task of event retrieval and description, which is versatile and well suited to related tasks such as event and entity summarization or entity linking."
+#    - "We test several possible methods based on the LOAD approach."
+
+# ### Summarized Sentence Patterns:
+
+# 1. **First, [Method/Approach] is used to [Purpose/Action].**
+#    - Example: "First, the BM25-based retriever is used to parse textboxes from URLs and compute scores."
+
+# 2. **Second, [Approach] is implemented for [Purpose].**
+#    - Example: "Second, a trainable language model is implemented to perform query rewriting."
+
+# 3. **To achieve [Outcome], [Method] is applied to [Action].**
+#    - Example: "To achieve effective embedding, the ESE model is applied to scale model depth and embedding size."
+
+# 4. **The proposed [Method] allows for [Outcome], improving [Action].**
+#    - Example: "The proposed trainable scheme allows for smoother steps in the pipeline, improving retrieval accuracy."
+
+# 5. **[Action] is conducted using [Method], showing [Result].**
+#    - Example: "Multiple-choice QA is conducted using a frozen LLM reader, showing consistent performance improvements."
+
+# These patterns can help in structuring future method summaries or analysis in academic and technical writing.
