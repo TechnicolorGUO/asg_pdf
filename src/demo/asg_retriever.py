@@ -256,7 +256,7 @@ def process_pdf(file_path: str, survey_id: str, embedder: HuggingFaceEmbeddings)
     # splitters = TextSplitting().pypdf_recursive_splitter(file_path)
 
     split_start_time = time.time()
-    splitters = TextSplitting().unstructured_recursive_splitter(file_path, survey_id)
+    splitters = TextSplitting().mineru_recursive_splitter(file_path, survey_id)
 
     documents_list = [document.page_content for document in splitters]
     for i in range(len(documents_list)):

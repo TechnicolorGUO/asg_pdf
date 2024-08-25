@@ -152,7 +152,7 @@ class PosRank(pke.unsupervised.PositionRank):
 def delete_files(request):
     if request.method == 'POST':
         try:
-            folders = ['./src/static/data/pdf/', './src/static/data/tsv/', './src/static/data/txt/']
+            folders = ['./src/static/data/pdf/', './src/static/data/tsv/', './src/static/data/txt/', './src/static/data/md/']
             for folder in folders:
                 for filename in os.listdir(folder):
                     file_path = os.path.join(folder, filename)

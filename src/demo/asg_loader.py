@@ -8,12 +8,18 @@
 6*. possible improvement: MinerU (Shanghai AI Lab) maybe a good tool for pdf extraction
 '''
 
-import os
 import re
 import json
 import spacy
 from langchain_community.document_loaders import UnstructuredPDFLoader, PyPDFLoader, PDFMinerLoader
-import time
+
+# MinerU (Shanghai AI Lab) 
+# import re
+# import json
+import os
+import subprocess
+from langchain_community.document_loaders import UnstructuredMarkdownLoader
+from langchain_core.documents import Document
 
 # from magic_pdf.rw.DiskReaderWriter import DiskReaderWriter
 
@@ -21,6 +27,90 @@ import time
 nlp = spacy.load("en_core_web_sm")
 
 class DocumentLoading:
+    def convert_pdf_to_md(self, pdf_file, output_dir="output", method="auto"):
+        base_name = os.path.splitext(os.path.basename(pdf_file))[0]
+        target_dir = os.path.join(output_dir, base_name)
+
+        if os.path.exists(target_dir):
+            print(f"Folder for {pdf_file} already exists in {output_dir}. Skipping conversion.")
+        else:
+            command = ["magic-pdf", "-p", pdf_file, "-o", output_dir, "-m", method]
+            try:
+                subprocess.run(command, check=True)
+                print(f"Successfully converted {pdf_file} to markdown format in {target_dir}.")
+            except subprocess.CalledProcessError as e:
+                print(f"An error occurred: {e}")
+
+    def extract_information_from_md(self, md_text):
+        # Title: 在第一个双换行符之前的内容。
+        title_match = re.search(r'^(.*?)(\n\n|\Z)', md_text, re.DOTALL)
+        title = title_match.group(1).strip() if title_match else "N/A"
+
+        # Authors: 从第一个双换行符之后，到abstract标志之前的内容。
+        authors_match = re.search(r'\n\n(.*?)(\n\n[Aa]bstract[\.\- ]?\n\n|\n\n[Aa]bstract[\.\- ]?\n\n|\n\n[Aa]bstract[\.\- ]?\n\n|\n\n[Aa] bstract[\.\- ]?\n\n|\n\n[Aa] BSTRACT[\.\- ]?\n\n)', md_text, re.DOTALL)
+        authors = authors_match.group(1).strip() if authors_match else "N/A"
+
+        # Abstract: 从 abstract标志之后，到下一个双换行符之前的内容。
+        abstract_match = re.search(r'(\n\n[Aa]bstract[\.\- ]?\n\n|\n\n[Aa]bstract[\.\- ]?\n\n|\n\n[Aa]bstract[\.\- ]?\n\n|\n\n[Aa] bstract[\.\- ]?\n\n|\n\n[Aa] BSTRACT[\.\- ]?\n\n)(.*?)(\n\n|\Z)', md_text, re.DOTALL)
+        abstract = abstract_match.group(2).strip() if abstract_match else "N/A"
+
+        # Introduction: 从 introduction标志之后，到related work标志之前的内容。
+        introduction_match = re.search(
+            r'\n\n[1iI][\.\- ]?\s*[Ii]\s*[nN]\s*[tT]\s*[rR]\s*[oO]\s*[dD]\s*[uU]\s*[cC]\s*[tT]\s*[iI]\s*[oO]\s*[nN][\.\- ]?\n\n(.*?)'
+            r'(?=\n\n[2rR][\.\- ]?\s*[Rr]\s*[Ee]\s*[Ll]\s*[Aa]\s*[Tt]\s*[Ee]\s*[Dd]\s*[Ww]\s*[Oo]\s*[Rr]\s*[Kk][\.\- ]?\n\n)',
+            md_text, re.DOTALL
+        )
+        introduction = introduction_match.group(1).strip() if introduction_match else "N/A"
+
+        extracted_data = {
+            "title": title,
+            "authors": authors,
+            "abstract": abstract,
+            "introduction": introduction
+        }
+        return extracted_data
+    
+    def process_md_file(self, md_file_path, survey_id):
+        loader = UnstructuredMarkdownLoader(md_file_path)
+        data = loader.load()
+        assert len(data) == 1, "Expected exactly one document in the markdown file."
+        assert isinstance(data[0], Document), "The loaded data is not of type Document."
+        extracted_text = data[0].page_content
+
+        extracted_data = self.extract_information_from_md(extracted_text)
+        # json_file_path = 'extracted_info.json'
+        # with open(json_file_path, 'w', encoding='utf-8') as f:
+        #     json.dump(extracted_data, f, ensure_ascii=False, indent=4)
+
+        title = md_file_path.split('/')[-1].split('.')[0]
+        title_new = title.strip()
+        invalid_chars = ['<', '>', ':', '"', '/', '\\', '|', '?', '*', '_']
+        for char in invalid_chars:
+            title_new = title_new.replace(char, ' ')
+        # print("============================")
+        # print(title_new)
+        os.makedirs(f'./src/static/data/txt/{survey_id}', exist_ok=True)
+        with open(f'./src/static/data/txt/{survey_id}/{title_new}.json', 'w', encoding='utf-8') as f:
+            json.dump(extracted_data, f, ensure_ascii=False, indent=4)
+        print(extracted_data)
+
+        return extracted_text
+    
+    def process_pdf(self, pdf_file, survey_id):
+        os.makedirs(f'./src/static/data/md/{survey_id}', exist_ok=True)
+        output_dir = f"./src/static/data/md/{survey_id}"
+        base_name = os.path.splitext(os.path.basename(pdf_file))[0]
+        target_dir = os.path.join(output_dir, base_name, "auto")
+
+        # 1. Convert PDF to markdown if the folder doesn't exist
+        self.convert_pdf_to_md(pdf_file, output_dir)
+
+        # 2. Process the markdown file in the output directory
+        md_file_path = os.path.join(target_dir, f"{base_name}.md")
+        if not os.path.exists(md_file_path):
+            raise FileNotFoundError(f"Markdown file {md_file_path} does not exist. Conversion might have failed.")
+
+        return self.process_md_file(md_file_path, survey_id)
     
     def extract_names(self, text):
         '''
@@ -294,9 +384,11 @@ class DocumentLoading:
         #     json.dump(extracted_data, f, ensure_ascii=False, indent=4)
 
         # join the abstract and introduction parts and return
-        extracted_text = f"Abstract: {extracted_data['abstract']}\n\n" \
-                  f"Introduction: {extracted_data['introduction']}\n\n"
+        # extracted_text = f"Abstract: {extracted_data['abstract']}\n\n" \
+        #           f"Introduction: {extracted_data['introduction']}\n\n"
 
+        # to display 4 sections
+        extracted_text = extracted_data
 
         title = file_path.split('/')[-1].split('.')[0]
 
