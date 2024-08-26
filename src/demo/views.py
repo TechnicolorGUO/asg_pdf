@@ -653,7 +653,7 @@ def automatic_taxonomy(request):
             max_new_tokens=256,
         )
         print(outputs[0]["generated_text"][-1]['content'])
-        if len(outputs[0]["generated_text"][-1]['content'])>5:
+        if len(outputs[0]["generated_text"][-1]['content'].split())>8:
             category_label_summarized.append(category_label[i][0])
         else:
             category_label_summarized.append(outputs[0]["generated_text"][-1]['content'].replace("'",'').replace('"','').strip())
