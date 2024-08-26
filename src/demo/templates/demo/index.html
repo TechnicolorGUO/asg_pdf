@@ -788,6 +788,8 @@ FONTS & ICONS
 						<p class="pdf-info" style="margin: 0; font-size: 0.9em;">${filesize} MB</p>
 					</a>
 				</div>
+
+				<input type="hidden" name="refs" value="${ref_id}" class="pdf-hidden-input">
 			</div>
 		`;
 			document.getElementById("ref_list").innerHTML += pdfHtml;
