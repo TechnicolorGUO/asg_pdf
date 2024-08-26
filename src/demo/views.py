@@ -356,15 +356,17 @@ def upload_refs(request):
         json_files_path = f'./src/static/data/txt/{Global_survey_id}/*.json'
         json_files = glob.glob(json_files_path)
 
-        ref_paper_num = len(json_files)
-        print(f'The length of the json files is {ref_paper_num}')
+
 
         # Dictionary to hold title and abstract pairs
         title_abstract_dict = {}
         filtered_json_files = [
-            json_file for json_file in all_json_files
+            json_file for json_file in json_files
             if os.path.splitext(os.path.basename(json_file))[0] in filenames
         ]
+        ref_paper_num = len(filtered_json_files)
+        print(f'The length of the json files is {ref_paper_num}')
+
         # Iterate over each JSON file
         for file_path in filtered_json_files:
             with open(file_path, 'r') as file:
