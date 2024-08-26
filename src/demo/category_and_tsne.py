@@ -115,7 +115,7 @@ def clustering(df, n_cluster, survey_id):
     df['label'] = clustering.fit_and_get_labels(text)
     print(clustering.topic_model.get_topic_info())
     topic_json = clustering.topic_model.get_topic_info().to_json()
-    with open(f'./src/static/data/txt/{survey_id}/topic.json', 'w') as file:
+    with open(f'./src/static/data/info/{survey_id}/topic.json', 'w') as file:
         file.write(topic_json)
     # df['top_n_words'] = clustering.topic_model.get_topic_info()['Representation'].tolist()
     # df['topic_word'] = clustering.topic_model.get_topic_info()['KeyBERT'].tolist()

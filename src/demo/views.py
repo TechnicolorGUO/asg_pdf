@@ -46,6 +46,8 @@ import torch
 DATA_PATH = './src/static/data/pdf/'
 TXT_PATH = './src/static/data/txt/'
 TSV_PATH = './src/static/data/tsv/'
+MD_PATH = './src/static/data/md/'
+INFO_PATH = './src/static/data/info/' 
 
 Survey_dict = {
     '2742488' : 'Energy Efficiency in Cloud Computing',
@@ -79,6 +81,7 @@ Global_ref_list = []
 Global_category_description = []
 Global_category_label = []
 Global_df_selected = ""
+Global_test_flag = True
 embedder = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
 
 
@@ -304,7 +307,11 @@ def upload_refs(request):
         print(list(file_dict.keys()))
 
         global Global_survey_id
-        uid_str = generate_uid()
+        global Global_test_flag
+        if Global_test_flag == True:
+            uid_str = 'test'
+        else:
+            uid_str = generate_uid()
         Global_survey_id = uid_str
         print('Uploaded survey id', Global_survey_id)
 
@@ -313,7 +320,15 @@ def upload_refs(request):
             if not file.name:
                 return JsonResponse({'error': 'No selected file'}, status=400)
             if file:
-                saved_file_name = default_storage.save('./src/static/data/pdf/'+file.name, file)
+                file_path = f'./src/static/data/pdf/{uid_str}/{file.name}'
+                
+                # 检查文件是否存在
+                if default_storage.exists(file_path):
+                    # 删除原文件
+                    default_storage.delete(file_path)
+                
+                # 保存新文件
+                saved_file_name = default_storage.save(file_path, file)
                 file_size = round(float(file.size) / 1024000, 2)
                 processed_file = process_file(saved_file_name, Global_survey_id)
                 filenames.append(processed_file)
@@ -390,7 +405,7 @@ def upload_refs(request):
         input_pd = json_data_pd
 
         # Define the output path for the title-abstract JSON file
-        output_path = f'./src/static/data/txt/{Global_survey_id}/title_abstract_pairs.json'
+        output_path = f'./src/static/data/info/{Global_survey_id}/title_abstract_pairs.json'
 
         # Ensure the directory exists
         os.makedirs(os.path.dirname(output_path), exist_ok=True)
@@ -609,7 +624,7 @@ def automatic_taxonomy(request):
     ref_titles = list(df_tmp.groupby(df_tmp['label'])['ref_title'].apply(list))
     ref_indexs = list(df_tmp.groupby(df_tmp['label'])['index'].apply(list))
 
-    info = pd.read_json(f'./src/static/data/txt/{Global_survey_id}/topic.json')
+    info = pd.read_json(f'./src/static/data/info/{Global_survey_id}/topic.json')
     category_label = info['KeyBERT'].to_list()
     category_label_summarized=[]
 
