@@ -301,11 +301,11 @@ FONTS & ICONS
 					<div class="col-md-8" style="height: 60px">
 						<h2 align="left"><span class="fas fa-tags"></span> Please Input the Topic for Summarization: </h2>
 					</div>
-					<div class="col-md-4" style="height: 60px">
+					<!-- <div class="col-md-4" style="height: 60px">
 						<button type="button" class="btn btn-danger" id="delete_button" name="delete_button" style="margin-top: 10px; margin-left: 50px; background-color: #dc3545; border-color: #dc3545;" onclick="deleteFiles()">
 							<i class="fa fa-trash" aria-hidden="true"></i> Delete All Local References
 						</button>
-					</div>
+					</div> -->
 				</div>
 				<br>
 
@@ -788,8 +788,6 @@ FONTS & ICONS
 						<p class="pdf-info" style="margin: 0; font-size: 0.9em;">${filesize} MB</p>
 					</a>
 				</div>
-				<button class="pdf-remove" onclick="removePdf(this)" style="margin-left: auto;">×</button>
-				<input type="hidden" name="refs" value="${ref_id}" class="pdf-hidden-input">
 			</div>
 		`;
 			document.getElementById("ref_list").innerHTML += pdfHtml;
@@ -811,27 +809,27 @@ FONTS & ICONS
 		}
 
 
-		function fetchAndDisplayJson(path) {
-			$.ajax({
-				type: "GET",
-				url: path,
-				dataType: "json",
-				success: function(data) {
-					// Remove 'title' and 'introduction' fields
-					const filteredData = Object.fromEntries(
-						Object.entries(data).filter(
-							([key]) => key !== 'title' && key !== 'introduction'
-						)
-					);
-					let jsonContent = JSON.stringify(filteredData, null, 2);
-					document.getElementById("jsonContent").textContent = jsonContent;
-					document.getElementById("jsonModal").style.display = "block";
-				},
-				error: function(jqXHR, textStatus, errorThrown) {
-					alert("Failed to load JSON data: " + errorThrown);
-				}
-			});
-		}
+	function fetchAndDisplayJson(path) {
+		$.ajax({
+			type: "GET",
+			url: path,
+			dataType: "json",
+			success: function(data) {
+				// Remove 'title' and 'introduction' fields
+				const filteredData = Object.fromEntries(
+					Object.entries(data).filter(
+						([key]) => key !== 'title' && key !== 'introduction'
+					)
+				);
+				let jsonContent = JSON.stringify(filteredData, null, 2);
+				document.getElementById("jsonContent").textContent = jsonContent;
+				document.getElementById("jsonModal").style.display = "block";
+			},
+			error: function(jqXHR, textStatus, errorThrown) {
+				alert("Failed to load JSON data: " + errorThrown);
+			}
+		});
+	}
 
     function sub_topic(){
     	//alert($('#topic_form').serialize());
