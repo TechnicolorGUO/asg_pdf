@@ -638,7 +638,7 @@ def automatic_taxonomy(request):
     )
     for i in range(len(category_label)):
         messages = [
-            {"role": "system", "content": "You are a summarizer and your task is to summarize the following keywords into one phrase within five words, If you cannot summarize the invalid content, just output 'invalid'."},
+            {"role": "system", "content": "You are a summarizer and your task is to summarize the following keywords into one phrase within five words, If you cannot summarize the invalid content, just output 'invalid'. Noted that you are only allowed to output one phrase in total."},
             {"role": "user", "content": "The keywords are: " + str(category_label[i])},
         ]
         outputs = pipeline(
