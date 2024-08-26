@@ -424,25 +424,25 @@ def upload_refs(request):
         if ref_paper_num>0:
                 
             ## change col name
-        #try:
-            # required columns
-            # input_pd["ref_title"] = input_pd["reference paper title"].apply(lambda x: clean_str(x) if len(str(x))>0 else 'Invalid title')
-            # input_pd['ref_title'] = ['_'.join(filename.split("_")[:-1]) for filename in filenames]
-            input_pd['ref_title'] = [filename for filename in filenames]
-            print(input_pd['ref_title'])
-            print('++++++++++++++++++++++++++++++++++++++++++++++')
-            input_pd["ref_context"] = [""]*ref_paper_num
-            input_pd["ref_entry"] = input_pd["reference paper citation information (can be collected from Google scholar/DBLP)"]
-            input_pd["abstract"] = input_pd["reference paper abstract (Please copy the text AND paste here)"].apply(lambda x: clean_str(x) if len(str(x))>0 else 'Invalid abstract')
-            input_pd["intro"] = input_pd["reference paper introduction (Please copy the text AND paste here)"].apply(lambda x: clean_str(x) if len(str(x))>0 else 'Invalid introduction')
+            try:
+                # required columns
+                # input_pd["ref_title"] = input_pd["reference paper title"].apply(lambda x: clean_str(x) if len(str(x))>0 else 'Invalid title')
+                # input_pd['ref_title'] = ['_'.join(filename.split("_")[:-1]) for filename in filenames]
+                input_pd['ref_title'] = [filename for filename in filenames]
+                print(input_pd['ref_title'])
+                print('++++++++++++++++++++++++++++++++++++++++++++++')
+                input_pd["ref_context"] = [""]*ref_paper_num
+                input_pd["ref_entry"] = input_pd["reference paper citation information (can be collected from Google scholar/DBLP)"]
+                input_pd["abstract"] = input_pd["reference paper abstract (Please copy the text AND paste here)"].apply(lambda x: clean_str(x) if len(str(x))>0 else 'Invalid abstract')
+                input_pd["intro"] = input_pd["reference paper introduction (Please copy the text AND paste here)"].apply(lambda x: clean_str(x) if len(str(x))>0 else 'Invalid introduction')
 
-            # optional columns
-            input_pd["ref_link"] = input_pd["reference paper doi link (optional)"].apply(lambda x: x if len(str(x))>0 else '')
-            input_pd["label"] = input_pd["reference paper category label (optional)"].apply(lambda x: str(x) if len(str(x))>0 else '')
-            #input_pd["label"] = input_pd["reference paper category id (optional)"].apply(lambda x: str(x) if len(str(x))>0 else '')
-        #except:
-            print("Cannot convert the column name")
-            is_valid_submission = False
+                # optional columns
+                input_pd["ref_link"] = input_pd["reference paper doi link (optional)"].apply(lambda x: x if len(str(x))>0 else '')
+                input_pd["label"] = input_pd["reference paper category label (optional)"].apply(lambda x: str(x) if len(str(x))>0 else '')
+                #input_pd["label"] = input_pd["reference paper category id (optional)"].apply(lambda x: str(x) if len(str(x))>0 else '')
+            except:
+                print("Cannot convert the column name")
+                is_valid_submission = False
 
             ## get cluster_num, check has_label_id
             stat_input_pd_labels = input_pd["label"].value_counts()
@@ -560,6 +560,8 @@ def upload_refs(request):
             #ref_list = {'references':[],'ref_links':[],'ref_ids':[]}
         #pdb.set_trace()
         ref_list = json.dumps(ref_list)
+        print(ref_list)
+        print('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
         print("--- %s seconds used in processing files ---" % (time.time() - start_time))
         return HttpResponse(ref_list)
 
