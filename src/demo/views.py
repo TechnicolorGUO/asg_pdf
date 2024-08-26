@@ -361,9 +361,12 @@ def upload_refs(request):
 
         # Dictionary to hold title and abstract pairs
         title_abstract_dict = {}
-
+        filtered_json_files = [
+            json_file for json_file in all_json_files
+            if os.path.splitext(os.path.basename(json_file))[0] in filenames
+        ]
         # Iterate over each JSON file
-        for file_path in json_files:
+        for file_path in filtered_json_files:
             with open(file_path, 'r') as file:
                 data = json.load(file)
 
