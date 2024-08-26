@@ -78,6 +78,8 @@ class DocumentLoading:
         extracted_text = data[0].page_content
 
         extracted_data = self.extract_information_from_md(extracted_text)
+        if len(extracted_data["abstract"]) < 10:
+            extracted_data["abstract"] = extracted_data['title']
         # json_file_path = 'extracted_info.json'
         # with open(json_file_path, 'w', encoding='utf-8') as f:
         #     json.dump(extracted_data, f, ensure_ascii=False, indent=4)

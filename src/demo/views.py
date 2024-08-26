@@ -645,7 +645,7 @@ def automatic_taxonomy(request):
     )
     for i in range(len(category_label)):
         messages = [
-            {"role": "system", "content": "You are a summarizer and your task is to summarize the following keywords into one phrase within five words, If you cannot summarize the invalid content, just output 'invalid'. Noted that you are only allowed to output one phrase in total."},
+            {"role": "system", "content": "You are a summarizer and your task is to summarize the following keywords into one phrase within five words. Noted that you are only allowed to output one phrase in total."},
             {"role": "user", "content": "The keywords are: " + str(category_label[i])},
         ]
         outputs = pipeline(
@@ -653,7 +653,10 @@ def automatic_taxonomy(request):
             max_new_tokens=256,
         )
         print(outputs[0]["generated_text"][-1]['content'])
-        category_label_summarized.append(outputs[0]["generated_text"][-1]['content'].replace("'",'').replace('"','').strip())
+        if len(outputs[0]["generated_text"][-1]['content'])>5:
+            category_label_summarized.append(category_label[i][0])
+        else:
+            category_label_summarized.append(outputs[0]["generated_text"][-1]['content'].replace("'",'').replace('"','').strip())
     print(category_label)
     print('+++++++++++++++++++++++++++++')
     print(category_label_summarized)
