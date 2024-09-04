@@ -46,21 +46,35 @@ class DocumentLoading:
         title_match = re.search(r'^(.*?)(\n\n|\Z)', md_text, re.DOTALL)
         title = title_match.group(1).strip() if title_match else "N/A"
 
-        # Authors: 从第一个双换行符之后，到abstract标志之前的内容。
-        authors_match = re.search(r'\n\n(.*?)(\n\n[Aa]bstract[\.\- ]?\n\n|\n\n[Aa]bstract[\.\- ]?\n\n|\n\n[Aa]bstract[\.\- ]?\n\n|\n\n[Aa] bstract[\.\- ]?\n\n|\n\n[Aa] BSTRACT[\.\- ]?\n\n)', md_text, re.DOTALL)
+        # Authors: 从第一个双换行符之后，到abstract标志（\n\nAbstract\n\n或者\n\nABSTRACT\n\n 或者\n\nAbstract.\n\n或者\n\nAbstract-\n\n或者\n\nA bstract\n\n(注意这里a和b之间有一个空格)或者\n\nA BSTRACT\n\n(注意这里a和b之间有一个空格)或者\n\nA bstract.\n\n或者\n\nA bstract-\n\n) 之前的内容。这里abstract标识符可以大小写不敏感。
+        authors_match = re.search(
+            r'\n\n(.*?)(\n\n[aA][\s]*[bB][\s]*[sS][\s]*[tT][\s]*[rR][\s]*[aA][\s]*[cC][\s]*[tT][^\n]*\n\n)', 
+            md_text, 
+            re.DOTALL
+        )
+
         authors = authors_match.group(1).strip() if authors_match else "N/A"
 
-        # Abstract: 从 abstract标志之后，到下一个双换行符之前的内容。
-        abstract_match = re.search(r'(\n\n[Aa]bstract[\.\- ]?\n\n|\n\n[Aa]bstract[\.\- ]?\n\n|\n\n[Aa]bstract[\.\- ]?\n\n|\n\n[Aa] bstract[\.\- ]?\n\n|\n\n[Aa] BSTRACT[\.\- ]?\n\n)(.*?)(\n\n|\Z)', md_text, re.DOTALL)
-        abstract = abstract_match.group(2).strip() if abstract_match else "N/A"
+        # Abstract: 从 abstract标志（\n\nAbstract\n\n或者\n\nABSTRACT\n\n 或者\n\nAbstract.\n\n或者\n\nAbstract-\n\n或者\n\nA bstract\n\n(注意这里a和b之间有一个空格)或者\n\nA BSTRACT\n\n(注意这里a和b之间有一个空格)或者\n\nA bstract.\n\n或者\n\nA bstract-\n\n)之后，到 下一个\n\n之前的内容。
+        abstract_match = re.search(
+            r'(\n\n[aA][\s]*[bB][\s]*[sS][\s]*[tT][\s]*[rR][\s]*[aA][\s]*[cC][\s]*[tT][^\n]*\n\n)(.*?)(\n\n|\Z)', 
+            md_text, 
+            re.DOTALL
+        )
+        # abstract = abstract_match.group(2).strip() if abstract_match else "N/A"
+        abstract = abstract_match.group(0).strip() if abstract_match else "N/A"
+        abstract = re.sub(r'^[aA]\s*[bB]\s*[sS]\s*[tT]\s*[rR]\s*[aA]\s*[cC]\s*[tT][^\w]*', '', abstract)
+        abstract = re.sub(r'^[^a-zA-Z]*', '', abstract)
 
-        # Introduction: 从 introduction标志之后，到related work标志之前的内容。
+        # Introduction
         introduction_match = re.search(
-            r'\n\n[1iI][\.\- ]?\s*[Ii]\s*[nN]\s*[tT]\s*[rR]\s*[oO]\s*[dD]\s*[uU]\s*[cC]\s*[tT]\s*[iI]\s*[oO]\s*[nN][\.\- ]?\n\n(.*?)'
-            r'(?=\n\n[2rR][\.\- ]?\s*[Rr]\s*[Ee]\s*[Ll]\s*[Aa]\s*[Tt]\s*[Ee]\s*[Dd]\s*[Ww]\s*[Oo]\s*[Rr]\s*[Kk][\.\- ]?\n\n)',
+            r'\n\n([1I][\.\- ]?\s*)?[Ii]\s*[nN]\s*[tT]\s*[rR]\s*[oO]\s*[dD]\s*[uU]\s*[cC]\s*[tT]\s*[iI]\s*[oO]\s*[nN][\.\- ]?\s*\n\n(.*?)'
+            # r'(?=\n\n(?:([2I][I]|\s*2)[\.\- ]?\s*[Rr]\s*[Ee]\s*[Ll]\s*[Aa]\s*[Tt]\s*[Ee]\s*[Dd]\s*[Ww]\s*[Oo]\s*[Rr]\s*[Kk][sS]?[\. ]?\s*\n\n|2\.\s.*?\n\n|\n\n(?:[2I][I]|\s*2)[^\n]*?\n\n))',
+            r'(?=\n\n(?:([2I][I]|\s*2)[^\n]*?\n\n|\n\n(?:[2I][I][^\n]*?\n\n)))',
+
             md_text, re.DOTALL
         )
-        introduction = introduction_match.group(1).strip() if introduction_match else "N/A"
+        introduction = introduction_match.group(2).strip() if introduction_match else "N/A"
 
         extracted_data = {
             "title": title,
@@ -76,6 +90,12 @@ class DocumentLoading:
         assert len(data) == 1, "Expected exactly one document in the markdown file."
         assert isinstance(data[0], Document), "The loaded data is not of type Document."
         extracted_text = data[0].page_content
+
+        # 消除噪声 保留abstract及之后的内容
+        abstract_position = re.search(r'\n\n[aA][\s]*[bB][\s]*[sS][\s]*[tT][\s]*[rR][\s]*[aA][\s]*[cC][\s]*[tT][^\n]*\n\n', extracted_text)
+        if abstract_position:
+            extracted_text = extracted_text[abstract_position.start():]
+        
 
         extracted_data = self.extract_information_from_md(extracted_text)
         if len(extracted_data["abstract"]) < 10:
