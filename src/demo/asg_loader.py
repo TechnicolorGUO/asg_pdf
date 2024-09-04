@@ -90,13 +90,7 @@ class DocumentLoading:
         assert len(data) == 1, "Expected exactly one document in the markdown file."
         assert isinstance(data[0], Document), "The loaded data is not of type Document."
         extracted_text = data[0].page_content
-
-        # 消除噪声 保留abstract及之后的内容
-        abstract_position = re.search(r'\n\n[aA][\s]*[bB][\s]*[sS][\s]*[tT][\s]*[rR][\s]*[aA][\s]*[cC][\s]*[tT][^\n]*\n\n', extracted_text)
-        if abstract_position:
-            extracted_text = extracted_text[abstract_position.start():]
         
-
         extracted_data = self.extract_information_from_md(extracted_text)
         if len(extracted_data["abstract"]) < 10:
             extracted_data["abstract"] = extracted_data['title']
@@ -115,6 +109,11 @@ class DocumentLoading:
         with open(f'./src/static/data/txt/{survey_id}/{title_new}.json', 'w', encoding='utf-8') as f:
             json.dump(extracted_data, f, ensure_ascii=False, indent=4)
         print(extracted_data)
+        
+        # 消除噪声 保留abstract及之后的内容
+        abstract_position = re.search(r'\n\n[aA][\s]*[bB][\s]*[sS][\s]*[tT][\s]*[rR][\s]*[aA][\s]*[cC][\s]*[tT][^\n]*\n\n', extracted_text)
+        if abstract_position:
+            extracted_text = extracted_text[abstract_position.start():]
 
         return extracted_text
     
