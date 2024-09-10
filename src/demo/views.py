@@ -654,28 +654,34 @@ def automatic_taxonomy(request):
         description = generate(context)
         Global_description_list.append(description)
 
-    # 定义输入和输出文件名
-    input_file = f'./src/static/data/tsv/{Global_survey_id}.tsv'
-    output_file = f'./src/static/data/tsv/{Global_survey_id}.tsv'
+    # 定义文件名
+    file_path = f'./src/static/data/tsv/{Global_survey_id}.tsv'
 
     # 读取现有文件并追加新列
-    with open(input_file, 'r', newline='', encoding='utf-8') as infile, \
-        open(output_file, 'w', newline='', encoding='utf-8') as outfile:
-        
+    with open(file_path, 'r', newline='', encoding='utf-8') as infile:
         reader = csv.reader(infile, delimiter='\t')
-        writer = csv.writer(outfile, delimiter='\t')
-        
-        # 获取表头并追加新列名
-        headers = next(reader)
-        headers.append('retrieval_result')
-        writer.writerow(headers)
-        
-        # 逐行读取数据并追加新列数据
-        for row, description in zip(reader, Global_description_list):
-            row.append(description)
-            writer.writerow(row)
+        rows = list(reader)
 
-    print('Updated file has been saved to', output_file)
+    # 确保文件不为空
+    if rows:
+        # 获取表头并追加新列名
+        headers = rows[0]
+        headers.append('retrieval_result')
+
+        # 更新数据行
+        updated_rows = [headers]
+        for row, description in zip(rows[1:], Global_description_list):
+            row.append(description)
+            updated_rows.append(row)
+
+        # 写回原文件
+        with open(file_path, 'w', newline='', encoding='utf-8') as outfile:
+            writer = csv.writer(outfile, delimiter='\t')
+            writer.writerows(updated_rows)
+
+        print('Updated file has been saved to', file_path)
+    else:
+        print('Input file is empty.')
 
     global Global_ref_list
     Global_ref_list = ref_list
