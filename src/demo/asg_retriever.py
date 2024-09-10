@@ -285,14 +285,8 @@ def process_pdf(file_path: str, survey_id: str, embedder: HuggingFaceEmbeddings)
     print("============================")
     print(title_new)
 
-    return embeddings_list, documents_list, metadata_list, title_new
-
-# embeddings_list, documents_list, metadata_list = process_pdf("./ESE.pdf")
-# print(len(embeddings_list))
-# print(len(documents_list))
-# print("++++++++++++++++++++++++++++++++++++++++++++++")
-
-def query_embeddings(collection_name: str, embeddings_list: list, documents_list: list, metadata_list: list, query_text: str):
+    # new
+    collection_name = os.path.basename(file_path).split('.')[0]
     retriever = Retriever()
     retriever.list_collections_chroma()
     retriever.create_collection_chroma(collection_name)
@@ -303,23 +297,32 @@ def query_embeddings(collection_name: str, embeddings_list: list, documents_list
         metadata_list=metadata_list
     )
 
-    # Embed the query
+    return collection_name, embeddings_list, documents_list, metadata_list, title_new
+
+# embeddings_list, documents_list, metadata_list = process_pdf("./ESE.pdf")
+# print(len(embeddings_list))
+# print(len(documents_list))
+# print("++++++++++++++++++++++++++++++++++++++++++++++")
+
+def query_embeddings(collection_name: str, query_list: list):
     embedder = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
-    query_embeddings = embedder.embed_query(query_text)
+    retriever = Retriever()
 
-    # Query the collection
-    query_result = retriever.query_chroma(collection_name=collection_name, query_embeddings=[query_embeddings], n_results=5)
-    
-    # Extract results
-    query_result_chunks = query_result["documents"][0]
-    query_result_ids = query_result["ids"][0]
-    # print(query_result_chunks)
-    # return query_result_chunks, query_result_ids
+    final_context = ""
 
-    # context = '//\n'.join(["@" + query_result_ids[i] + "//" + query_result_chunks[i] for i in range(len(query_result_chunks))])
-    context = '//\n'.join([query_result_chunks[i] for i in range(len(query_result_chunks))])
-    # print(context)
-    return context
+    seen_chunks = set()
+    for query_text in query_list:
+        query_embeddings = embedder.embed_query(query_text)
+        query_result = retriever.query_chroma(collection_name=collection_name, query_embeddings=[query_embeddings], n_results=2)
+
+        query_result_chunks = query_result["documents"][0]
+        # query_result_ids = query_result["ids"][0]
+
+        for chunk in query_result_chunks:
+            if chunk not in seen_chunks:
+                final_context += chunk.strip() + "//\n"
+                seen_chunks.add(chunk)
+    return final_context
 
 # context = query_embeddings(os.path.basename("./Test2.pdf").split('.')[0], embeddings_list, documents_list, metadata_list, "What algorithmic methods are used in the paper?")
 # print(context)

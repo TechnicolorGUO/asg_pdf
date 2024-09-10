@@ -35,7 +35,8 @@ from django.core.files.storage import default_storage
 
 from .asg_loader import DocumentLoading
 # from .parse import DocumentLoading
-from .asg_retriever import process_pdf
+from .asg_retriever import process_pdf, query_embeddings
+from .asg_generator import generate
 import glob
 import nltk
 
@@ -82,6 +83,8 @@ Global_category_description = []
 Global_category_label = []
 Global_df_selected = ""
 Global_test_flag = True
+Global_collection_names = []
+Global_description_list = []
 embedder = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
 
 
@@ -279,10 +282,10 @@ def PosRank_get_top5_ngrams(input_pd):
 def process_file(file_name, survey_id):
     # parser = DocumentLoading()
     global embedder
-    name = process_pdf(file_name, survey_id, embedder)[-1]
+    collection_name, name = process_pdf(file_name, survey_id, embedder)[1,-1]
     print(name)
     print("++++++++++++++++++++++++++++++++++++++++++++++")
-    return name
+    return collection_name, name
 
 # def process_file(file_name, survey_id):
 #     parser = DocumentLoading()
@@ -300,6 +303,7 @@ def upload_refs(request):
         has_ref_link = False
 
         filenames = []
+        collection_names = []
         filesizes = []
         file_dict = request.FILES
         file_name = list(file_dict.keys())[0]
@@ -308,6 +312,7 @@ def upload_refs(request):
 
         global Global_survey_id
         global Global_test_flag
+        global Global_collection_names
         if Global_test_flag == True:
             uid_str = 'test'
         else:
@@ -330,7 +335,8 @@ def upload_refs(request):
                 # 保存新文件
                 saved_file_name = default_storage.save(file_path, file)
                 file_size = round(float(file.size) / 1024000, 2)
-                processed_file = process_file(saved_file_name, Global_survey_id)
+                collection_name, processed_file = process_file(saved_file_name, Global_survey_id)
+                Global_collection_names.append(collection_name)
                 filenames.append(processed_file)
                 filesizes.append(file_size)
                 print(filenames)
@@ -611,10 +617,52 @@ def get_topic(request):
 
 @csrf_exempt
 def automatic_taxonomy(request):
+    global Global_description_list
     ref_dict = dict(request.POST)
     print(ref_dict)
     ref_list = ref_dict['refs']
     query = ref_dict['taxonomy_standard'][0]
+    if query=='method':
+        query_list = [
+            "First, [Method/Approach] is used to [Purpose/Action].",
+            "Second, [Approach] is implemented for [Purpose].",
+            "To achieve [Outcome], [Method] is applied to [Action].",
+            "The proposed [Method] allows for [Outcome], improving [Action].",
+            "[Action] is conducted using [Method], showing [Result].",
+            "[Method/Approach] involves [Technique] to [Outcome].",
+            "In this paper, [Method] is applied to [Task] by [Technique].",
+            "[Method/Approach] combines [Technique 1] and [Technique 2] for [Goal].",
+            "[Method] is designed to [Function], using [Key Feature/Tool].",
+            "To enhance [Aspect], [Method] incorporates [Advanced Technique] in [Context]."
+        ]
+    query_list = [
+    "First, [Method/Approach] is used to [Purpose/Action].",
+    "Second, [Approach] is implemented for [Purpose].",
+    "To achieve [Outcome], [Method] is applied to [Action].",
+    "The proposed [Method] allows for [Outcome], improving [Action].",
+    "[Action] is conducted using [Method], showing [Result].",
+    "[Method/Approach] involves [Technique] to [Outcome].",
+    "In this paper, [Method] is applied to [Task] by [Technique].",
+    "[Method/Approach] combines [Technique 1] and [Technique 2] for [Goal].",
+    "[Method] is designed to [Function], using [Key Feature/Tool].",
+    "To enhance [Aspect], [Method] incorporates [Advanced Technique] in [Context]."
+    ]
+    for name in Global_collection_names:
+        context = query_embeddings(name, query_list)
+        description = generate(context)
+        Global_description_list.append(description)
+
+    output_file = f'./src/static/data/tsv/{Global_survey_id}.tsv'
+    with open(output_file, 'w', newline='', encoding='utf-8') as file:
+        writer = csv.writer(file, delimiter='\t')
+        
+        # 写入表头
+        writer.writerow(['retrieval_result'])
+        
+        # 写入每个描述
+        for description in Global_description_list:
+            writer.writerow([description])
+
     global Global_ref_list
     Global_ref_list = ref_list
 
