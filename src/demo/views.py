@@ -662,6 +662,7 @@ def automatic_taxonomy(request):
         # 写入每个描述
         for description in Global_description_list:
             writer.writerow([description])
+        print('Description file has been saved to', output_file)
 
     global Global_ref_list
     Global_ref_list = ref_list
