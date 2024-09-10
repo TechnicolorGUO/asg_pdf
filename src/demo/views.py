@@ -654,17 +654,28 @@ def automatic_taxonomy(request):
         description = generate(context)
         Global_description_list.append(description)
 
+    # 定义输入和输出文件名
+    input_file = f'./src/static/data/tsv/{Global_survey_id}.tsv'
     output_file = f'./src/static/data/tsv/{Global_survey_id}.tsv'
-    with open(output_file, 'w', newline='', encoding='utf-8') as file:
-        writer = csv.writer(file, delimiter='\t')
+
+    # 读取现有文件并追加新列
+    with open(input_file, 'r', newline='', encoding='utf-8') as infile, \
+        open(output_file, 'w', newline='', encoding='utf-8') as outfile:
         
-        # 写入表头
-        writer.writerow(['retrieval_result'])
+        reader = csv.reader(infile, delimiter='\t')
+        writer = csv.writer(outfile, delimiter='\t')
         
-        # 写入每个描述
-        for description in Global_description_list:
-            writer.writerow([description])
-        print('Description file has been saved to', output_file)
+        # 获取表头并追加新列名
+        headers = next(reader)
+        headers.append('retrieval_result')
+        writer.writerow(headers)
+        
+        # 逐行读取数据并追加新列数据
+        for row, description in zip(reader, Global_description_list):
+            row.append(description)
+            writer.writerow(row)
+
+    print('Updated file has been saved to', output_file)
 
     global Global_ref_list
     Global_ref_list = ref_list
