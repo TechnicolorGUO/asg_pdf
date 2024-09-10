@@ -283,7 +283,7 @@ def process_file(file_name, survey_id):
     # parser = DocumentLoading()
     global embedder
     result = process_pdf(file_name, survey_id, embedder)
-    collection_name = result[1]
+    collection_name = result[0]
     name = result[-1]
     print(name)
     print("++++++++++++++++++++++++++++++++++++++++++++++")
