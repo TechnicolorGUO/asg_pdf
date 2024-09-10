@@ -282,7 +282,9 @@ def PosRank_get_top5_ngrams(input_pd):
 def process_file(file_name, survey_id):
     # parser = DocumentLoading()
     global embedder
-    collection_name, name = process_pdf(file_name, survey_id, embedder)[1,-1]
+    result = process_pdf(file_name, survey_id, embedder)
+    collection_name = result[1]
+    name = result[-1]
     print(name)
     print("++++++++++++++++++++++++++++++++++++++++++++++")
     return collection_name, name
