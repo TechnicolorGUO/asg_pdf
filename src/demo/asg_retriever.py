@@ -1,9 +1,9 @@
 '''
 0. The deletion function does not work. 多个相同检索结果是因为chroma中数据删除不干净 需手动删除
-1. advanced level retriever not implemented yet (HyDE)
-2. 将提取信息load到json的部分代码集成进建立向量数据库的函数process_pdf
-3*. HyDE方面自己写一个预期的回答query能产生的虚拟文档 在此基础上调整HyDE效果
+1*. HyDE方面调查多篇论文 找到其中描述方法的共性 反推通用的描述方法的语句格式 基于此调整预期query能产生的虚拟文档 在此基础上调整HyDE效果
+2*. 在生成HyDE过程中调用llama3 总结论文中常用于表示"关键词"的句式 这个关键词可以是methods, application... 利用这个HyDE进行检索
 '''
+
 import torch
 import uuid
 import re
@@ -12,7 +12,6 @@ import json
 import chromadb
 from langchain_chroma import Chroma
 from .asg_splitter import TextSplitting
-# from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_huggingface import HuggingFaceEmbeddings
 from .asg_loader import DocumentLoading
 import time
@@ -179,10 +178,9 @@ def legal_pdf(filename: str) -> str:
         name = 'ip_' + name
     return name
 
-
 def process_pdf(file_path: str, survey_id: str, embedder: HuggingFaceEmbeddings):
     # Load and split the PDF
-    # splitters = TextSplitting().pypdf_recursive_splitter(file_path)
+    # splitters = TextSplitting().mineru_recursive_splitter(file_path)
 
     split_start_time = time.time()
     splitters = TextSplitting().mineru_recursive_splitter(file_path, survey_id)
@@ -233,11 +231,6 @@ def process_pdf(file_path: str, survey_id: str, embedder: HuggingFaceEmbeddings)
 
     return collection_name, embeddings_list, documents_list, metadata_list, title_new
 
-# embeddings_list, documents_list, metadata_list = process_pdf("./ESE.pdf")
-# print(len(embeddings_list))
-# print(len(documents_list))
-# print("++++++++++++++++++++++++++++++++++++++++++++++")
-
 def query_embeddings(collection_name: str, query_list: list):
     embedder = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
     retriever = Retriever()
@@ -257,19 +250,3 @@ def query_embeddings(collection_name: str, query_list: list):
                 final_context += chunk.strip() + "//\n"
                 seen_chunks.add(chunk)
     return final_context
-
-# context = query_embeddings(os.path.basename("./Test2.pdf").split('.')[0], embeddings_list, documents_list, metadata_list, "What algorithmic methods are used in the paper?")
-# print(context)
-
-# Question format? If the questions follow only a few fixed formats, you can write the Hyde documents yourself.
-# This can save time asking the LLM and provide more accurate results.
-
-# GPT4o HyDE
-# To answer this question, I need to know which specific paper you are referring to. Please provide the title or a brief description of the paper's main content so that I can give you a more precise answer. Typically, research papers might involve the following algorithmic methods:
-
-# Machine Learning Algorithms: Such as linear regression, logistic regression, decision trees, random forests, support vector machines, k-nearest neighbors, neural networks, etc.
-# Deep Learning Algorithms: Convolutional neural networks (CNNs), recurrent neural networks (RNNs), long short-term memory networks (LSTMs), generative adversarial networks (GANs), etc.
-# Optimization Algorithms: Gradient descent, stochastic gradient descent, Newton's method, genetic algorithms, etc.
-# Graph Algorithms: Depth-first search, breadth-first search, shortest path algorithms (like Dijkstra's algorithm), PageRank, etc.
-# Statistical and Data Analysis Methods: Principal component analysis (PCA), t-distributed stochastic neighbor embedding (t-SNE), clustering analysis (such as k-means, hierarchical clustering), etc.
-# If you can provide more details, I will be able to pinpoint the specific algorithmic methods used in the paper.
