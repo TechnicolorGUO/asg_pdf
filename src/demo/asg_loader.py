@@ -1,17 +1,7 @@
-'''
-0. current implementation methods: regex and spaCy to extract title and authors (together), regex to extract abstract and introduction seperately
-1. title and authors can not be extracted accurately, due to the different formats of the pdf files
-2. abstract and introduction can be extracted accurately, but the regex pattern can be improved (abstract part in Test7.pdf)
-3. if the keywords are duplicated in the text, the extraction will be incorrect (e.g. "ABSTRACT" in the other parts)
-4. some more details on clean funcitons not yet implemented
-5. pypdf extraction function not yet nicely implemented (just a prototype)
-6*. possible improvement: MinerU (Shanghai AI Lab) maybe a good tool for pdf extraction
-'''
-
 import re
 import json
 import spacy
-from langchain_community.document_loaders import UnstructuredPDFLoader, PyPDFLoader, PDFMinerLoader
+from langchain_community.document_loaders import UnstructuredPDFLoader, PyPDFLoader
 
 # MinerU (Shanghai AI Lab) 
 # import re
@@ -20,8 +10,6 @@ import os
 import subprocess
 from langchain_community.document_loaders import UnstructuredMarkdownLoader
 from langchain_core.documents import Document
-
-# from magic_pdf.rw.DiskReaderWriter import DiskReaderWriter
 
 # load spaCy model
 nlp = spacy.load("en_core_web_sm")
@@ -117,7 +105,7 @@ class DocumentLoading:
 
         return extracted_text
     
-    def process_pdf(self, pdf_file, survey_id):
+    def load_pdf(self, pdf_file, survey_id):
         os.makedirs(f'./src/static/data/md/{survey_id}', exist_ok=True)
         output_dir = f"./src/static/data/md/{survey_id}"
         base_name = os.path.splitext(os.path.basename(pdf_file))[0]
@@ -234,10 +222,6 @@ class DocumentLoading:
             # data['authors'] = ", ".join(authors)
         else:
             print("Authors not found")
-
-        # authors_match = re.search(r'\n(.*?)\n(?:ABSTRACT|Abstract|Abstract\.|Abstract—)', text, re.DOTALL)
-        # if authors_match:
-        #     data['title'] = authors_match.group(1).strip()
 
         abstract_match = re.search(
             r'(?i)ABSTRACT\s*(.*?)(?=\n\s*\d+\.\s*INTRODUCTION|\n\s*\d+\.\s*Introduction|\n\s*\d+\sINTRODUCTION|\n\s*\d+\sIntroduction)',
@@ -399,15 +383,7 @@ class DocumentLoading:
         text = "\n\n".join(cleaned_blocks)
         text = self.clean_hyphenation_unstructured(text)
         extracted_data = self.extract_information_unstructured(text)
-
-        # # store extract information into a json file
-        # with open('extracted_info.json', 'w', encoding='utf-8') as f:
-        #     json.dump(extracted_data, f, ensure_ascii=False, indent=4)
-
-        # join the abstract and introduction parts and return
-        # extracted_text = f"Abstract: {extracted_data['abstract']}\n\n" \
-        #           f"Introduction: {extracted_data['introduction']}\n\n"
-
+        
         # to display 4 sections
         extracted_text = extracted_data
 
@@ -461,37 +437,7 @@ class DocumentLoading:
         extracted_text = self.clean_empty_and_numeric_lines(extracted_text)
         return extracted_text
 
-    def pdfminer_loader(self, file_path):
-        '''
-        Not yet implemented \n
-        Double '\\n' between sections
-        '''
-        loader = PDFMinerLoader(file_path)
-        data = loader.load()
-        print(data[0])
-
 if __name__ == "__main__":
     asg_loader = DocumentLoading()
-
-    # asg_loader.pypdf_loader_extract("./Test1.pdf")
-    # asg_loader.pypdf_loader_extract("./Test2.pdf")
-    # asg_loader.pypdf_loader_extract("./Test3.pdf")
-    # asg_loader.pypdf_loader_extract("./Test6.pdf")
-    # asg_loader.pypdf_loader_extract("./Test7.pdf")
-    # asg_loader.pypdf_loader_extract("./Test8.pdf")
-
-    # extracted_text = asg_loader.unstructured_loader("./Test1.pdf")
-    # extracted_text = asg_loader.unstructured_loader("./Test2.pdf")
     extracted_text = asg_loader.unstructured_loader("./Test3.pdf")
-    # extracted_text = asg_loader.unstructured_loader("./Test6.pdf")
-    # extracted_text = asg_loader.unstructured_loader("./Test7.pdf")
-    # extracted_text = asg_loader.unstructured_loader("./Test8.pdf")
     print(extracted_text)
-
-    # extracted_text = asg_loader.pypdf_loader("./Test1.pdf")
-    # extracted_text = asg_loader.pypdf_loader("./Test2.pdf")
-    # extracted_text = asg_loader.pypdf_loader("./Test3.pdf")
-    # extracted_text = asg_loader.pypdf_loader("./Test6.pdf")
-    # extracted_text = asg_loader.pypdf_loader("./Test7.pdf")
-    # extracted_text = asg_loader.pypdf_loader("./Test8.pdf")
-    # print(extracted_text)

@@ -1,7 +1,6 @@
 '''
 1. (not important) recursive character text splitter seperators can be determined by the user 如果要将retrieve到的文本应用到demo 需要完整句子
 2. chunk size of the splitter needs to be further optimized
-3. token splitter / semantic splitter may be helpful, with other embedding models
 '''
 from .asg_loader import DocumentLoading
 from langchain_text_splitters import CharacterTextSplitter, RecursiveCharacterTextSplitter
@@ -17,7 +16,7 @@ import time
 class TextSplitting:
 
     def mineru_recursive_splitter(self, file_path, survey_id):
-        docs = DocumentLoading().process_pdf(file_path, survey_id)
+        docs = DocumentLoading().load_pdf(file_path, survey_id)
         text_splitter = RecursiveCharacterTextSplitter(
             chunk_size=400,
             chunk_overlap=30,
@@ -59,22 +58,10 @@ class TextSplitting:
             length_function=len,
             is_separator_regex=False,
         )
-        # print(docs) # output before splitting
         texts = text_splitter.create_documents([docs])
-        return texts # output after splitting
-        # for text in texts:
-        #     print(text) # visualizing the output
-        #     print("==============================")
-
-        # splits = []
-        # for doc in docs:
-        #     doc_splits = text_splitter.split_text(doc)
-        #     splits.extend(doc_splits)
-        # return splits
+        return texts
 
     def unstructured_recursive_splitter(self, file_path, survey_id):
-
-
         doc_start_time = time.time()
         docs = DocumentLoading().unstructured_loader(file_path, survey_id)
         print("Document loading time: ", time.time() - doc_start_time)
@@ -86,20 +73,9 @@ class TextSplitting:
             length_function=len,
             is_separator_regex=False,
         )
-        # print(docs) # output before splitting
         texts = text_splitter.create_documents([docs])
         print("Splitting time: ", time.time() - split_start_time)
-        return texts # output after splitting
-        # print(len(texts))
-        # for text in texts:
-        #     print(text) # visualizing the output
-        #     print("==============================")
-
-        # splits = []
-        # for doc in docs:
-        #     doc_splits = text_splitter.split_text(doc)
-        #     splits.extend(doc_splits)
-        # return splits
+        return texts
 
     # openai api needed
     def pypdf_semantic_splitter(self, file_path, survey_id):
@@ -153,19 +129,6 @@ class TextSplitting:
 if __name__ == "__main__":
     asg_splitter = TextSplitting()
 
-    # texts = a1.txt_character("./Test1.txt")
-    # for text in texts:
-    #     print(text)
-    #     print("\n---------------\n")
-
-    # asg_splitter.pypdf_recursive_splitter("./Test1.pdf")
-    # asg_splitter.pypdf_recursive_splitter("./Test2.pdf")
-    # asg_splitter.pypdf_recursive_splitter("./Test3.pdf")
-    # asg_splitter.pypdf_recursive_splitter("./Test5.pdf")
-    # asg_splitter.pypdf_recursive_splitter("./Test6.pdf")
-    # asg_splitter.pypdf_recursive_splitter("./Test7.pdf")
-    # asg_splitter.pypdf_recursive_splitter("./Test8.pdf")
-
     asg_splitter.unstructured_recursive_splitter("./Test1.pdf")
     # asg_splitter.unstructured_recursive_splitter("./Test2.pdf")
     # asg_splitter.unstructured_recursive_splitter("./Test3.pdf")
@@ -173,19 +136,3 @@ if __name__ == "__main__":
     # asg_splitter.unstructured_recursive_splitter("./Test6.pdf")
     # asg_splitter.unstructured_recursive_splitter("./Test7.pdf")
     # asg_splitter.unstructured_recursive_splitter("./Test8.pdf")
-
-    # asg_splitter.tiktoken_token_splitter("./Test1.pdf")
-    # asg_splitter.tiktoken_token_splitter("./Test2.pdf")
-    # asg_splitter.tiktoken_token_splitter("./Test3.pdf")
-    # asg_splitter.tiktoken_token_splitter("./Test5.pdf")
-    # asg_splitter.tiktoken_token_splitter("./Test6.pdf")
-    # asg_splitter.tiktoken_token_splitter("./Test7.pdf")
-    # asg_splitter.tiktoken_token_splitter("./Test8.pdf")
-
-    # asg_splitter.spacy_token_splitter("./Test1.pdf")
-    # asg_splitter.spacy_token_splitter("./Test2.pdf")
-    # asg_splitter.spacy_token_splitter("./Test3.pdf")
-    # asg_splitter.spacy_token_splitter("./Test5.pdf")
-    # asg_splitter.spacy_token_splitter("./Test6.pdf")
-    # asg_splitter.spacy_token_splitter("./Test7.pdf")
-    # asg_splitter.spacy_token_splitter("./Test8.pdf")
