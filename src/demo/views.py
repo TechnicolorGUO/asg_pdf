@@ -37,6 +37,7 @@ from .asg_loader import DocumentLoading
 # from .parse import DocumentLoading
 from .asg_retriever import process_pdf, query_embeddings
 from .asg_generator import generate
+from .asg_outline import OutlineGenerator
 import glob
 import nltk
 
@@ -85,12 +86,24 @@ Global_df_selected = ""
 Global_test_flag = True
 Global_collection_names = []
 Global_description_list = []
+Global_pipeline = None
+Global_cluster_names = []
+
 embedder = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
 
 
 from demo.taskDes import absGen, introGen,introGen_supervised, methodologyGen, conclusionGen
 from demo.category_and_tsne import clustering
 
+
+model_id = "meta-llama/Meta-Llama-3.1-8B-Instruct"
+Global_pipeline = transformers.pipeline(
+    "text-generation",
+    model=model_id,
+    model_kwargs={"torch_dtype": torch.bfloat16},
+    token = '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',
+    device_map="auto",
+)
 
 class reference_collection(object):
     def __init__(
@@ -691,7 +704,7 @@ def automatic_taxonomy(request):
     colors, category_label =  Clustering_refs(n_clusters=3) # fix with 3
     # colors, category_label, category_description = Clustering_refs_with_criteria(n_clusters=Survey_n_clusters[Global_survey_id], query=query)
 
-    global Global_category_label
+    global Global_category_label, Global_cluster_names
     Global_category_label = category_label
 
     df_tmp = Global_df_selected.reset_index()
@@ -703,20 +716,22 @@ def automatic_taxonomy(request):
     category_label = info['KeyBERT'].to_list()
     category_label_summarized=[]
 
-    model_id = "meta-llama/Meta-Llama-3.1-8B-Instruct"
-    pipeline = transformers.pipeline(
-        "text-generation",
-        model=model_id,
-        model_kwargs={"torch_dtype": torch.bfloat16},
-        token = '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',
-        device_map="auto",
-    )
+    # model_id = "meta-llama/Meta-Llama-3.1-8B-Instruct"
+    # pipeline = transformers.pipeline(
+    #     "text-generation",
+    #     model=model_id,
+    #     model_kwargs={"torch_dtype": torch.bfloat16},
+    #     token = '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',
+    #     device_map="auto",
+    # )
     for i in range(len(category_label)):
         messages = [
-            {"role": "system", "content": "You are a summarizer and your task is to summarize the following keywords into one phrase within five words. Noted that you are only allowed to output one phrase in total."},
+            {"role": "system", "content": "You are a summarizer and your task is to summarize the following keywords into one phrase as a cluster name within five words. Noted that you are only allowed to output one phrase in total.\
+                For example, the keywords are: Neural Networks_Deep Learning_Convolutional Layers_Backpropagation_Gradient Descent_Activation Functions_Supervised Learning_Model Training_Data Preprocessing_Overfitting\
+                and your response should be: Deep Learning Techniques."},
             {"role": "user", "content": "The keywords are: " + str(category_label[i])},
         ]
-        outputs = pipeline(
+        outputs = Global_pipeline(
             messages,
             max_new_tokens=256,
         )
@@ -725,6 +740,8 @@ def automatic_taxonomy(request):
             category_label_summarized.append(category_label[i][0])
         else:
             category_label_summarized.append(outputs[0]["generated_text"][-1]['content'].replace("'",'').replace('"','').strip())
+    
+    Global_cluster_names = category_label_summarized.copy()
     print(category_label)
     print('+++++++++++++++++++++++++++++')
     print(category_label_summarized)
@@ -1003,6 +1020,18 @@ def Clustering_refs(n_clusters):
     Global_df_selected = df_selected
     category_description = [0]*len(colors)
     category_label = [0]*len(colors)
+
+    outline_generator = OutlineGenerator(Global_pipeline, Global_df_selected, Global_cluster_names)
+    outline_generator.get_cluster_info()
+    outline = outline_generator.generate_outline()
+    print(outline)
+
+    outline_json = json.loads({'outline': outline}) 
+    output_path = TXT_PATH + Global_survey_id + '/outline.json'
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+    with open(output_path, 'w') as outfile:
+        json.dump(outline_json, outfile, indent=4, ensure_ascii=False)
+
 
     return colors, category_label
     # return 1,0,1
