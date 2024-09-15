@@ -664,7 +664,7 @@ def automatic_taxonomy(request):
     ]
     for name in Global_collection_names:
         context = query_embeddings(name, query_list)
-        description = generate(context)
+        description = generate(context, Global_pipeline)
         Global_description_list.append(description)
 
     # 定义文件名

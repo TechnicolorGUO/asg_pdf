@@ -57,7 +57,7 @@ def generate_old(context, question, temp=0.7):
         answer = context
     return answer
 
-def generate(context, temp=0.7):
+def generate(context, pipeline, temp=0.7):
 
     template = """
     You are provided with several context excerpts from a research paper. 
@@ -83,14 +83,12 @@ def generate(context, temp=0.7):
     prompt_template = PromptTemplate.from_template(template)
     formatted_prompt = prompt_template.format(context=context)
 
-    # generate answer
-    inputs = tokenizer(formatted_prompt, return_tensors="pt").input_ids.to("cuda:0")
-    with torch.no_grad():
-        outputs = model.generate(inputs, max_length=1000, temperature=temp)
-    res = tokenizer.decode(outputs[0], skip_special_tokens=True)
 
-    # Extract the answer by detecting the "ANSWER:" tag
+    # Generate answer
+    outputs = pipeline(formatted_prompt, max_length=1000, temperature=temp, return_full_text=False)
+
     answer_start = "ANSWER:"
+    res = outputs[0]['generated_text']
     start_index = res.find(answer_start)
     if start_index != -1:
         answer = res[start_index + len(answer_start):].strip()
