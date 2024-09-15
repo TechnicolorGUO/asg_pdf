@@ -89,7 +89,7 @@ Global_description_list = []
 Global_pipeline = None
 Global_cluster_names = []
 
-embedder = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
+embedder = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2", device="cuda:0")
 
 
 from demo.taskDes import absGen, introGen,introGen_supervised, methodologyGen, conclusionGen
