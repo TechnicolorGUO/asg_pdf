@@ -709,7 +709,8 @@ def automatic_taxonomy(request):
     colors, category_label =  Clustering_refs(n_clusters=3) # fix with 3
     # colors, category_label, category_description = Clustering_refs_with_criteria(n_clusters=Survey_n_clusters[Global_survey_id], query=query)
 
-    global Global_category_label, Global_cluster_names
+    global Global_category_label
+    global Global_cluster_names
     Global_category_label = category_label
 
     df_tmp = Global_df_selected.reset_index()
@@ -731,7 +732,7 @@ def automatic_taxonomy(request):
     # )
     for i in range(len(category_label)):
         messages = [
-            {"role": "system", "content": "You are a summarizer and your task is to summarize the following keywords into one phrase as a cluster name within five words. Noted that you are only allowed to output one phrase in total.\
+            {"role": "system", "content": "You are a research topic summarizer and your task is to summarize the following keywords into one phrase as a cluster name within five words research topic. Noted that you are only allowed to output one research topic in total.\
                 For example, the keywords are: Neural Networks_Deep Learning_Convolutional Layers_Backpropagation_Gradient Descent_Activation Functions_Supervised Learning_Model Training_Data Preprocessing_Overfitting\
                 and your response should be: Deep Learning Techniques."},
             {"role": "user", "content": "The keywords are: " + str(category_label[i])},
@@ -746,7 +747,7 @@ def automatic_taxonomy(request):
         else:
             category_label_summarized.append(outputs[0]["generated_text"][-1]['content'].replace("'",'').replace('"','').strip())
     
-    Global_cluster_names = category_label_summarized.copy()
+    Global_cluster_names = category_label_summarized
     print(category_label)
     print('+++++++++++++++++++++++++++++')
     print(category_label_summarized)
@@ -1028,10 +1029,10 @@ def Clustering_refs(n_clusters):
 
     outline_generator = OutlineGenerator(Global_pipeline, Global_df_selected, Global_cluster_names)
     outline_generator.get_cluster_info()
-    outline = outline_generator.generate_outline(Global_survey_title)
+    messages, outline = outline_generator.generate_outline(Global_survey_title)
     print(outline)
 
-    outline_json = json.loads({'outline': outline}) 
+    outline_json = {'messages':messages, 'outline': outline}
     output_path = TXT_PATH + Global_survey_id + '/outline.json'
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
     with open(output_path, 'w') as outfile:
