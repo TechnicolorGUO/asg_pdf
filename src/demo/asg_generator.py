@@ -9,10 +9,10 @@ from langchain.prompts import PromptTemplate
 import torch
 import os
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "0,1"  # server
-model_path = "meta-llama/Meta-Llama-3.1-8B-Instruct"
-tokenizer = AutoTokenizer.from_pretrained(model_path)
-model = AutoModelForCausalLM.from_pretrained(model_path, device_map="auto")
+# os.environ["CUDA_VISIBLE_DEVICES"] = "0,1"  # server
+# model_path = "meta-llama/Meta-Llama-3.1-8B-Instruct"
+# tokenizer = AutoTokenizer.from_pretrained(model_path)
+# model = AutoModelForCausalLM.from_pretrained(model_path, device_map="auto")
 
 # not yet tested
 def generate_old(context, question, temp=0.7):
