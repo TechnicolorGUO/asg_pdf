@@ -748,6 +748,7 @@ def automatic_taxonomy(request):
             category_label_summarized.append(outputs[0]["generated_text"][-1]['content'].replace("'",'').replace('"','').strip())
     
     Global_cluster_names = category_label_summarized
+
     print(category_label)
     print('+++++++++++++++++++++++++++++')
     print(category_label_summarized)
@@ -762,6 +763,19 @@ def automatic_taxonomy(request):
     }
     print(cate_list)
     cate_list = json.dumps(cate_list)
+
+    global Global_pipeline, Global_df_selected, Global_cluster_names
+    outline_generator = OutlineGenerator(Global_pipeline, Global_df_selected, Global_cluster_names)
+    outline_generator.get_cluster_info()
+    messages, outline = outline_generator.generate_outline(Global_survey_title)
+    print(outline)
+
+    outline_json = {'messages':messages, 'outline': outline}
+    output_path = TXT_PATH + Global_survey_id + '/outline.json'
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+    with open(output_path, 'w') as outfile:
+        json.dump(outline_json, outfile, indent=4, ensure_ascii=False)
+
     return HttpResponse(cate_list)
 
 
@@ -1026,18 +1040,6 @@ def Clustering_refs(n_clusters):
     Global_df_selected = df_selected
     category_description = [0]*len(colors)
     category_label = [0]*len(colors)
-
-    outline_generator = OutlineGenerator(Global_pipeline, Global_df_selected, Global_cluster_names)
-    outline_generator.get_cluster_info()
-    messages, outline = outline_generator.generate_outline(Global_survey_title)
-    print(outline)
-
-    outline_json = {'messages':messages, 'outline': outline}
-    output_path = TXT_PATH + Global_survey_id + '/outline.json'
-    os.makedirs(os.path.dirname(output_path), exist_ok=True)
-    with open(output_path, 'w') as outfile:
-        json.dump(outline_json, outfile, indent=4, ensure_ascii=False)
-
 
     return colors, category_label
     # return 1,0,1
