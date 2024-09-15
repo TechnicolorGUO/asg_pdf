@@ -734,7 +734,7 @@ def automatic_taxonomy(request):
         messages = [
             {"role": "system", "content": "You are a research topic summarizer and your task is to summarize the following keywords into one phrase as a cluster name within five words research topic. Noted that you are only allowed to output one research topic in total.\
                 For example, the keywords are: Neural Networks_Deep Learning_Convolutional Layers_Backpropagation_Gradient Descent_Activation Functions_Supervised Learning_Model Training_Data Preprocessing_Overfitting\
-                and your response should be: Deep Learning Techniques."},
+                and your response should be: 'Deep Learning Techniques' these three words purely."},
             {"role": "user", "content": "The keywords are: " + str(category_label[i])},
         ]
         outputs = Global_pipeline(
