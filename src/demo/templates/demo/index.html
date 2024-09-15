@@ -756,6 +756,7 @@ FONTS & ICONS
             formData.append("file" + i, files[i]);
         }
 		topic = $('#topic_input_box').val()
+		formData.append("topic", topic);
 		$.ajax({
 		type: "POST",
 		dataType: "json",
@@ -763,7 +764,6 @@ FONTS & ICONS
 		processData: false,
 		contentType: false,
 		data: formData,
-		topic: topic,
 		success: function(result) {
 			// Iterate over the filenames array
 			for (let i = 0, len = result['filenames'].length; i < len; i++) {
