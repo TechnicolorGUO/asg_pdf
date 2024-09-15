@@ -79,6 +79,7 @@ Survey_n_clusters = {
 }
 
 Global_survey_id = ""
+Global_survey_title=""
 Global_ref_list = []
 Global_category_description = []
 Global_category_label = []
@@ -328,6 +329,10 @@ def upload_refs(request):
         global Global_survey_id
         global Global_test_flag
         global Global_collection_names
+        global Global_survey_title
+
+        Global_survey_title = request.POST.get('topic', False)
+
         if Global_test_flag == True:
             uid_str = 'test'
         else:
@@ -1023,7 +1028,7 @@ def Clustering_refs(n_clusters):
 
     outline_generator = OutlineGenerator(Global_pipeline, Global_df_selected, Global_cluster_names)
     outline_generator.get_cluster_info()
-    outline = outline_generator.generate_outline()
+    outline = outline_generator.generate_outline(Global_survey_title)
     print(outline)
 
     outline_json = json.loads({'outline': outline}) 
