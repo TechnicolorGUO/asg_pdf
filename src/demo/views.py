@@ -637,7 +637,7 @@ def get_topic(request):
 
 @csrf_exempt
 def automatic_taxonomy(request):
-    global Global_description_list
+    global Global_description_list, Global_df_selected, Global_cluster_names, Global_ref_list, Global_category_label
     ref_dict = dict(request.POST)
     print(ref_dict)
     ref_list = ref_dict['refs']
@@ -701,7 +701,6 @@ def automatic_taxonomy(request):
     else:
         print('Input file is empty.')
 
-    global Global_ref_list
     Global_ref_list = ref_list
 
     print('Categorization survey id', Global_survey_id)
@@ -709,8 +708,6 @@ def automatic_taxonomy(request):
     colors, category_label =  Clustering_refs(n_clusters=3) # fix with 3
     # colors, category_label, category_description = Clustering_refs_with_criteria(n_clusters=Survey_n_clusters[Global_survey_id], query=query)
 
-    global Global_category_label
-    global Global_cluster_names
     Global_category_label = category_label
 
     df_tmp = Global_df_selected.reset_index()
@@ -764,7 +761,7 @@ def automatic_taxonomy(request):
     print(cate_list)
     cate_list = json.dumps(cate_list)
 
-    global Global_pipeline, Global_df_selected, Global_cluster_names
+    
     outline_generator = OutlineGenerator(Global_pipeline, Global_df_selected, Global_cluster_names)
     outline_generator.get_cluster_info()
     messages, outline = outline_generator.generate_outline(Global_survey_title)
