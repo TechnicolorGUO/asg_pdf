@@ -36,7 +36,7 @@ from django.core.files.storage import default_storage
 from .asg_loader import DocumentLoading
 # from .parse import DocumentLoading
 from .asg_retriever import process_pdf, query_embeddings
-from .asg_generator import generate
+from .asg_generator import generate,generate_sentence_patterns
 from .asg_outline import OutlineGenerator
 import glob
 import nltk
@@ -642,34 +642,23 @@ def automatic_taxonomy(request):
     print(ref_dict)
     ref_list = ref_dict['refs']
     query = ref_dict['taxonomy_standard'][0]
-    if query=='method':
-        query_list = [
-            "First, [Method/Approach] is used to [Purpose/Action].",
-            "Second, [Approach] is implemented for [Purpose].",
-            "To achieve [Outcome], [Method] is applied to [Action].",
-            "The proposed [Method] allows for [Outcome], improving [Action].",
-            "[Action] is conducted using [Method], showing [Result].",
-            "[Method/Approach] involves [Technique] to [Outcome].",
-            "In this paper, [Method] is applied to [Task] by [Technique].",
-            "[Method/Approach] combines [Technique 1] and [Technique 2] for [Goal].",
-            "[Method] is designed to [Function], using [Key Feature/Tool].",
-            "To enhance [Aspect], [Method] incorporates [Advanced Technique] in [Context]."
-        ]
-    query_list = [
-    "First, [Method/Approach] is used to [Purpose/Action].",
-    "Second, [Approach] is implemented for [Purpose].",
-    "To achieve [Outcome], [Method] is applied to [Action].",
-    "The proposed [Method] allows for [Outcome], improving [Action].",
-    "[Action] is conducted using [Method], showing [Result].",
-    "[Method/Approach] involves [Technique] to [Outcome].",
-    "In this paper, [Method] is applied to [Task] by [Technique].",
-    "[Method/Approach] combines [Technique 1] and [Technique 2] for [Goal].",
-    "[Method] is designed to [Function], using [Key Feature/Tool].",
-    "To enhance [Aspect], [Method] incorporates [Advanced Technique] in [Context]."
-    ]
+    # query_list = [
+    # "First, [Method/Approach] is used to [Purpose/Action].",
+    # "Second, [Approach] is implemented for [Purpose].",
+    # "To achieve [Outcome], [Method] is applied to [Action].",
+    # "The proposed [Method] allows for [Outcome], improving [Action].",
+    # "[Action] is conducted using [Method], showing [Result].",
+    # "[Method/Approach] involves [Technique] to [Outcome].",
+    # "In this paper, [Method] is applied to [Task] by [Technique].",
+    # "[Method/Approach] combines [Technique 1] and [Technique 2] for [Goal].",
+    # "[Method] is designed to [Function], using [Key Feature/Tool].",
+    # "To enhance [Aspect], [Method] incorporates [Advanced Technique] in [Context]."
+    # ]
+    query_list = generate_sentence_patterns(query, Global_pipeline)
+
     for name in Global_collection_names:
         context = query_embeddings(name, query_list)
-        description = generate(context, Global_pipeline)
+        description = generate(context, Global_pipeline, query)
         Global_description_list.append(description)
 
     # 定义文件名
