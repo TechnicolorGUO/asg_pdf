@@ -8,6 +8,7 @@ from transformers import AutoTokenizer, AutoModelForCausalLM, pipeline
 from langchain.prompts import PromptTemplate
 import torch
 import os
+import re
 
 # os.environ["CUDA_VISIBLE_DEVICES"] = "0,1"  # server
 # model_path = "meta-llama/Meta-Llama-3.1-8B-Instruct"
