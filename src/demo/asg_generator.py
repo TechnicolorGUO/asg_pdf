@@ -142,15 +142,15 @@ Begin your response immediately with the list, and do not include any other text
 
     outputs = pipeline(
         prompt,
-        max_new_tokens=200,
+        max_new_tokens=300,
         temperature=0.3,  # Lower temperature for more focused output
         num_return_sequences=1,
         eos_token_id=pipeline.tokenizer.eos_token_id,
     )
 
     res = outputs[0]["generated_text"]
-    # print("Model Output:\n", res)  # Add this line to see the raw output
-    # print("\n\n\n\n")
+    print("Model Output:\n", res)  # Add this line to see the raw output
+    print("\n\n\n\n")
 
     query_list = extract_query_list(res)
 

@@ -6,6 +6,7 @@ import os
 class OutlineGenerator():
     def __init__(self, pipeline, df, cluster_names, mode='desp'):
         self.pipeline = pipeline
+        self.pipeline.model.load_adapter("technicolor/llama3.1_8b_outline_generation")
         self.df = df
         self.cluster = [{'label': i, 'name': cluster_names[i]} for i in range(len(cluster_names))]
         self._add_cluster_info()
@@ -26,7 +27,8 @@ class OutlineGenerator():
                 cluster = self.cluster[i]
                 claims = ''
                 for j in range(len(cluster['info'])):
-                    claims = cluster['info'].iloc[j]['retrieval_result'] + '\n' + claims
+                    # claims = cluster['info'].iloc[j]['retrieval_result'] + '\n' + claims
+                    claims = cluster['info'].iloc[j]['ref_title'] + '\n' + claims
                 result.append(claims)
         else:
             for i in range(len(self.cluster)):
@@ -71,18 +73,25 @@ class OutlineGenerator():
         for i in range(len(self.cluster)):
             cluster = self.cluster[i]
             cluster_with_claims = cluster_with_claims + f'Cluster {i}: {cluster["name"]}\n' + "Descriptions for entities in this cluster: \n" + claims[i] + '\n\n'
-        system_prompt = f'''
-            You are a helpful assistant who is helping a researcher to generate an outline for a survey paper.
-            The references used by this survey paper have been clustered into different categories.
-            The researcher will provides you with the title of the survey paper
-            together with the cluster names and the descriptions for entities in each cluster.
-            '''
+        # system_prompt = f'''
+        #     You are a helpful assistant who is helping a researcher to generate an outline for a survey paper.
+        #     The references used by this survey paper have been clustered into different categories.
+        #     The researcher will provides you with the title of the survey paper
+        #     together with the cluster names and the descriptions for entities in each cluster.
+        #     '''
+        system_prompt = f'''Generate the outline of the survey paper following the format of the example : [[1, '1 Introduction'], [1, '2 Perturbations of (co)differentials'], [2, '2.1 Derivations of the tensor algebra'], [more sections...]].\
+                            The first element in the sub-list refers to the hierachy of the section name (from 1 to 3)\
+                            The second element in the sub-list refers to the section name.
+        '''
+
         example_json = {"title":"A Survey of Huebschmann and Stasheff's Paper: Formal Solution of the Master Equation via HPT and Deformation Theory","outline":[{"title":"1 Introduction","outline":[]},{"title":"2 Perturbations of (co)differentials","outline":[{"title":"2.1 Derivations of the tensor algebra","outline":[]},{"title":"2.2 Coderivations of the tensor coalgebra","outline":[]},{"title":"2.3 Coderivations of the symmetric coalgebra","outline":[]},{"title":"2.4 DGLA\u2019s and perturbations of the codifferential","outline":[]},{"title":"2.5 Strongly homotopy Lie algebras","outline":[]},{"title":"2.6 The Hochschild chain complex and DGA\u2019s","outline":[]},{"title":"2.7 Strongly homotopy associative algebras","outline":[]}]},{"title":"3 Master equation","outline":[]},{"title":"4 Twisting cochain","outline":[{"title":"4.1 Differential on Hom","outline":[]},{"title":"4.2 Cup product and cup bracket","outline":[]},{"title":"4.3 Twisting cochain","outline":[]}]},{"title":"5 Homological perturbation theory (HPT)","outline":[{"title":"5.1 Contraction","outline":[]},{"title":"5.2 The first main theorem.","outline":[]}]},{"title":"6 Corollaries and the second main theorem","outline":[{"title":"6.1 Other corollaries of Theorem\u00a01.","outline":[]},{"title":"6.2 The second main theorem","outline":[]}]},{"title":"7 Differential Gerstenhaber and BV algebras","outline":[{"title":"7.1 Differential Gerstenhaber algebras","outline":[]},{"title":"7.2 Differential BV algebras","outline":[]},{"title":"7.3 Formality","outline":[{"title":"7.3.1 Formality of differential graded P\ud835\udc43Pitalic_P-algebras","outline":[]},{"title":"7.3.2 Examples","outline":[]}]},{"title":"7.4 Differential BV algebras and formality","outline":[]}]},{"title":"8 Deformation theory","outline":[]},{"title":"References","outline":[]}]}
-        user_prompt = {"survey_title":survey_title, "claims":cluster_with_claims}
+        # user_prompt = {"survey_title":survey_title, "claims":cluster_with_claims}
+        user_prompt = f'''Generate the outline of the survey paper given the title:{survey_title}, and three lists of sentences describing each cluster of the references used by this survey:{cluster_with_claims}'''
 
         messages = [
             {"role": "system", "content": system_prompt}, 
-            {"role": "user", "content": user_prompt}
+            {"role": "user", "content": user_prompt},
+            {"role": "assistant", "content":"[[1, '1 Introduction'], [1, '2 Abstract'], "}
             ] 
 
         outputs = self.pipeline(
@@ -90,6 +99,9 @@ class OutlineGenerator():
             max_new_tokens=4096,
         )
         result = outputs[0]["generated_text"][-1]['content']
+
+        self.pipeline.model.disable_adapters()
+
         return messages, result
         
         

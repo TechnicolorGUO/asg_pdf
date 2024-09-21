@@ -655,6 +655,8 @@ def automatic_taxonomy(request):
     # "To enhance [Aspect], [Method] incorporates [Advanced Technique] in [Context]."
     # ]
     query_list = generate_sentence_patterns(query, Global_pipeline)
+    print(query_list)
+    print("x"*36)
 
     for name in Global_collection_names:
         context = query_embeddings(name, query_list)
