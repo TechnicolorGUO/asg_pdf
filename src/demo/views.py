@@ -37,7 +37,7 @@ from .asg_loader import DocumentLoading
 # from .parse import DocumentLoading
 from .asg_retriever import process_pdf, query_embeddings
 from .asg_generator import generate,generate_sentence_patterns
-from .asg_outline import OutlineGenerator
+from .asg_outline import OutlineGenerator, generateOutlineHTML
 import glob
 import nltk
 
@@ -605,7 +605,7 @@ def annotate_categories(request):
     assert(len(topic_word_list)==len(annotated_paper_ids_list_list))
 
     tsvfile_name = Global_survey_id + '.tsv'
-    input_pd = pd.read_csv(DATA_PATH + tsvfile_name, sep = '\t')
+    input_pd = pd.read_csv(TSV_PATH + tsvfile_name, sep = '\t')
     #assert(len(annotated_topic_word_list)==input_pd.shape[0])
 
     annotated_topic_word_list = ['']*input_pd.shape[0]
@@ -615,9 +615,16 @@ def annotate_categories(request):
 
     input_pd['label'] = annotated_topic_word_list
     #pdb.set_trace()
-    output_tsv_filename = DATA_PATH + tsvfile_name
+    output_tsv_filename = TSV_PATH + tsvfile_name
     os.remove(output_tsv_filename)
     input_pd.to_csv(output_tsv_filename, sep='\t')
+
+    try:
+        html = generateOutlineHTML(Global_survey_id)
+        print("The outline has been parsed successfully.")
+        return JsonResponse({'html': html})
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
 
     return HttpResponse('')
 

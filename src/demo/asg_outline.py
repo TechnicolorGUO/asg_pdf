@@ -109,70 +109,91 @@ class OutlineGenerator():
 
     
 def parseOutline(survey_id):
-    file_path = f'./src/static/data/txt/{survey_id}.json'
+    file_path = f'./src/static/data/txt/{survey_id}/outline.json'
     with open(file_path, 'r', encoding='utf-8') as file:
         data = json.load(file)
 
     prefix = data['messages'][2]['content']   
     response = data['outline']
+    print(response)
 
     # Extract content between the first '[' and the last ']'
     def extract_first_last(text):
         first_match = re.search(r'\[', text)
         last_match = re.search(r'\](?!.*\])', text)  # Negative lookahead to find the last ']'
         if first_match and last_match:
-            return text[first_match.start()+1:last_match.start()]
+            return '[' + text[first_match.start()+1:last_match.start()] + ']'
         return None
 
-    prefix_extracted = extract_first_last(prefix)
+    # prefix_extracted = extract_first_last(prefix)
     response_extracted = extract_first_last(response)
+    print(response_extracted)
 
-    if prefix_extracted:
-        prefix_list = ast.literal_eval(prefix_extracted)
-    else:
-        prefix_list = None
+    # if prefix_extracted:
+    #     prefix_list = ast.literal_eval(prefix_extracted)
+    # else:
+    #     prefix_list = None
 
     if response_extracted:
         outline_list = ast.literal_eval(response_extracted)
     else:
         outline_list = None
 
-    outline_list = []
-    for item in prefix_list:
-        outline_list.append(item)
+    result = []
+    # for item in prefix_list:
+    #     outline_list.append(item)
     for item in outline_list:
-        outline_list.append(item)
+        result.append(item)
     
-    return outline_list
+    return result
 
 def generateOutlineHTML(survey_id):
-    prefix_list, outline_list = parseOutline(survey_id)
+    outline_list = parseOutline(survey_id)
+    print(outline_list)
     html = '''
-    <div class="outline">
+    <div class="outline-container">
         <style>
-            .outline {
-                margin: 20px;
-                padding: 10px;
-                border: 1px solid #ccc;
-                border-radius: 5px;
-                background-color: #f9f9f9;
+            body, html {
+                margin: 0;
+                padding: 0;
+                height: 100%; /* Ensures the full height of the web page */
+                display: flex;
+                justify-content: center; /* Centers content horizontally */
+                align-items: center; /* Centers content vertically */
+                background-color: #f0f0f0; /* Light grey background */
             }
-            .outline ol {
-                list-style-type: decimal;
-                padding-left: 20px;
+            .outline {
+                width: 60%; /* Responsive width */
+                padding: 20px;
+                border: 1px solid #ccc;
+                border-radius: 8px;
+                background-color: #fff; /* White background for the outline */
+                box-shadow: 0 4px 8px rgba(0,0,0,0.1); /* Subtle shadow */
+                text-align: left;
+            }
+            .outline ul {
+                list-style-type: none; /* Removes list numbering */
+                padding-left: 0; /* Removes default padding */
             }
             .outline li {
-                margin: 5px 0;
+                margin-bottom: 10px; /* More space between items */
+                font-size: 16px; /* Larger font for better readability */
+                line-height: 1.5; /* Improved line spacing */
             }
         </style>
-        <ol>
+        <div class="outline">
+            <ul>
+                <li>1. Abstract</li>
+                <li>2. Introduction</li>
     '''
     for item in outline_list:
         html += f'<li>{item[1]}</li>'
-    html += '</ol></div>'
+    html += '</ul></div></div>'
     print(html)
     print('+++++++++++++++++++++++++++++++++')
     return html
         
-        
+
+if __name__ == '__main__':
+    generateOutlineHTML('test')
 

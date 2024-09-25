@@ -110,7 +110,7 @@ class ClusteringWithTopic:
         return topics
 
 def clustering(df, n_cluster, survey_id):
-    text = df['abstract'].astype(str)
+    text = df['retrieval_result'].astype(str)
     clustering = ClusteringWithTopic(text, n_cluster)
     df['label'] = clustering.fit_and_get_labels(text)
     print(clustering.topic_model.get_topic_info())

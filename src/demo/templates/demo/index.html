@@ -435,130 +435,10 @@ FONTS & ICONS
 		<h2 align="left"> Please choose the sections (subsections) you want to generate (Outline Enhanced by ChatGPT): </h2>
 		<form action="" method="post", id="sections_">
 			{% csrf_token %}
-			<!--<div class="form-check">-->
-			  <!--<input class="form-check-input" type="checkbox" checked ='checked' name="Title" value="Title" id="cbx_title" >-->
-			  <!--<label class="form-check-label" for="cbx_title">-->
-				<!--Title-->
-			  <!--</label>-->
-			<!--</div>-->
-
-			<div class="form-check">
-			  <input class="form-check-input" type="checkbox" checked ='checked' name="Abstract" value="Abstract" id="cbx_abstract" >
-			  <label class="form-check-label" for="cbx_abstract">
-				Abstract
-			  </label>
-			</div>
-			<div class="form-check">
-			  <input class="form-check-input" type="checkbox" checked ='checked' name="Introduction" value="Introduction" id="cbx_introduction" >
-			  <label class="form-check-label" for="cbx_introduction">
-				Introduction
-			  </label>
-				<div class="row">
-					<div class="col-sm-1 form-check" style="width: 10px"></div>
-					<div class="col-sm-10 form-check">
-						<input class="form-check-input" type="checkbox" checked ='checked' name="Background" value="Background" id="cbx_background" >
-						<label class="form-check-label" for="cbx_background">
-							Background
-						</label>
-					</div>
-					<div class="col-sm-1 form-check"></div>
-				</div>
-				<div class="row">
-					<div class="col-sm-1 form-check" style="width: 10px"></div>
-					<div class="col-sm-10 form-check">
-						<input class="form-check-input" type="checkbox" checked ='checked' name="Method" value="Method" id="cbx_method" >
-						<label class="form-check-label" for="cbx_method">
-							Methodologies
-						</label>
-					</div>
-					<div class="col-sm-1 form-check"></div>
-				</div>
-				<div class="row">
-					<div class="col-sm-1 form-check" style="width: 10px"></div>
-					<div class="col-sm-10 form-check">
-						<input class="form-check-input" type="checkbox" checked ='checked' name="Reminder" value="Reminder" id="cbx_reminder" >
-						<label class="form-check-label" for="cbx_reminder">
-							Reminder
-						</label>
-					</div>
-					<div class="col-sm-1 form-check"></div>
-				</div>
-			</div>
-			<div class="form-check">
-			  <input class="form-check-input" type="checkbox" checked ='checked' name="Imbalanced Data: Causes and Characteristics" value="Imbalanced Data: Causes and Characteristics" id="cbx_c_and_c" >
-			  <label class="form-check-label chatgpt" for="cbx_c_and_c">
-				Imbalanced Data: Causes and Characteristics
-			  </label>
-			</div>
-
-			<div class="form-check">
-			  <input class="form-check-input" type="checkbox" checked ='checked' name="Evaluation Metrics for Imbalanced Data" value="Evaluation Metrics for Imbalanced Data" id="cbx_evaluation" >
-			  <label class="form-check-label chatgpt" for="cbx_evaluation">
-				Evaluation Metrics for Imbalanced Data
-			  </label>
-			</div>
-
-			<div class="form-check">
-			  <input class="form-check-input" type="checkbox" checked ='checked' name="Techniques for Handling Imbalanced Data" value="Methodology" id="cbx_methodology" >
-			  <label class="form-check-label chatgpt" for="cbx_methodology">
-				Techniques for Handling Imbalanced Data (Methodologies)
-			  </label>
-
-			</div>
-
-			<div class="form-check">
-			  <input class="form-check-input" type="checkbox" checked ='checked' name="Applications of Predictive Modeling on Imbalanced Data" value="Application" id="cbx_app" >
-			  <label class="form-check-label chatgpt" for="cbx_app">
-				Applications of Predictive Modeling on Imbalanced Data
-			  </label>
-				<div class="row">
-					<div class="col-sm-1 form-check" style="width: 10px"></div>
-					<div class="col-sm-10 form-check">
-						<!--<input class="form-check-input" type="checkbox" checked ='checked' name="Background" value="Background" id="cbx_background" >-->
-						<label class="form-check-label chatgpt" for="cbx_background">
-							Sampling Approaches
-						</label>
-					</div>
-					<div class="col-sm-1 form-check"></div>
-				</div>
-				<div class="row">
-					<div class="col-sm-1 form-check" style="width: 10px"></div>
-					<div class="col-sm-10 form-check">
-						<!--<input class="form-check-input" type="checkbox" checked ='checked' name="Method" value="Method" id="cbx_method" >-->
-						<label class="form-check-label chatgpt" for="cbx_method">
-							Algorithmic Approaches
-						</label>
-					</div>
-					<div class="col-sm-1 form-check"></div>
-				</div>
-				<div class="row">
-					<div class="col-sm-1 form-check" style="width: 10px"></div>
-					<div class="col-sm-10 form-check">
-						<!--<input class="form-check-input" type="checkbox" checked ='checked' name="Reminder" value="Reminder" id="cbx_reminder" >-->
-						<label class="form-check-label chatgpt" for="cbx_reminder">
-							Meta-learning Approaches
-						</label>
-					</div>
-					<div class="col-sm-1 form-check"></div>
-				</div>
-			</div>
-
-
-			<div class="form-check">
-			  <input class="form-check-input" type="checkbox" checked ='checked' name="Challenges and Open Issues" value="Challenges" id="cbx_clg" >
-			  <label class="form-check-label chatgpt" for="cbx_clg">
-				Challenges and Open Issues
-			  </label>
-			</div>
-
-			<div class="form-check">
-			  <input class="form-check-input" type="checkbox" checked ='checked' name="Conclusion" value="Conclusion" id="cbx_conclusion" >
-			  <label class="form-check-label" for="cbx_conclusion">
-				Conclusion and Future Directions
-			  </label>
-			</div>
-
 		</form>
+	
+
+
 		<br>
 		<div style="text-align: center">
 			<input class="btn btn-default" onclick="select_sections()" value="Confirm">
@@ -955,6 +835,10 @@ FONTS & ICONS
 			}
 		}
 		// add a button
+
+		//New: Generate the outline
+		
+
 		$.ajax({
 			type: "POST",
 			dataType: "json",
@@ -963,16 +847,18 @@ FONTS & ICONS
 				'topic_word_list': topic_word_list,
 				'ref_lists': ref_lists
 			},
-			/*
 			success: function(result) {
-				//alert(result);
-				console.log(result);
+				if (result.html) {
+					// 将返回的 HTML 内容插入到 form 中
+					$('#sections_').html(result.html);
+				} else if (result.error) {
+					// 处理错误信息
+					alert(result.error);
+				}
 			},
-
-			error: function(jqXHR, textStatus, errorThrown){
+			error: function(jqXHR, textStatus, errorThrown) {
 				alert(jqXHR.responseText);
 			}
-			*/
 		});
 		$("#sections").attr("style","display:inline;");
 
