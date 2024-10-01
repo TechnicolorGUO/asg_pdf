@@ -105,6 +105,8 @@ Global_pipeline = transformers.pipeline(
     token = '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',
     device_map="auto",
 )
+Global_pipeline.model.load_adapter("technicolor/llama3.1_8b_outline_generation")
+Global_pipeline.model.disable_adapters()
 
 class reference_collection(object):
     def __init__(

@@ -9,7 +9,8 @@ import ast
 class OutlineGenerator():
     def __init__(self, pipeline, df, cluster_names, mode='desp'):
         self.pipeline = pipeline
-        self.pipeline.model.load_adapter("technicolor/llama3.1_8b_outline_generation")
+        # self.pipeline.model.load_adapter("technicolor/llama3.1_8b_outline_generation")
+        self.pipeline.model.enable_adapters()
         self.df = df
         self.cluster = [{'label': i, 'name': cluster_names[i]} for i in range(len(cluster_names))]
         self._add_cluster_info()
