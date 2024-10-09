@@ -146,50 +146,170 @@ def parseOutline(survey_id):
     for item in outline_list:
         result.append(item)
     
+    print("The result is: ", result)
     return result
 
 def generateOutlineHTML(survey_id):
     outline_list = parseOutline(survey_id)
     print(outline_list)
     html = '''
-    <div class="outline-container">
+    <div class="container-fluid w-50 d-flex flex-column justify-content-center align-items-center">
+
         <style>
-            body, html {
-                margin: 0;
-                padding: 0;
-                height: 100%; /* Ensures the full height of the web page */
-                display: flex;
-                justify-content: center; /* Centers content horizontally */
-                align-items: center; /* Centers content vertically */
-                background-color: #f0f0f0; /* Light grey background */
+            /* Styling for different hierarchy levels */
+            .level-1 {
+                font-size: 20px;
+                font-weight: bold;
+                position: relative;
             }
-            .outline {
-                width: 60%; /* Responsive width */
-                padding: 20px;
-                border: 1px solid #ccc;
+            .level-2 {
+                font-size: 18px;
+                padding-left: 40px;
+            }
+            .level-3 {
+                font-size: 16px;
+                padding-left: 80px;
+            }
+            .list-group-item {
+                border: none;
+            }
+            
+            /* Custom card style */
+            .custom-card {
+                background-color: #fff;
                 border-radius: 8px;
-                background-color: #fff; /* White background for the outline */
-                box-shadow: 0 4px 8px rgba(0,0,0,0.1); /* Subtle shadow */
-                text-align: left;
+                padding: 20px;
+                margin-top: 20px;
+                width: 100%;
+                max-width: 800px;
+                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1), 
+                            0 6px 20px rgba(0, 0, 0, 0.1);
             }
-            .outline ul {
-                list-style-type: none; /* Removes list numbering */
-                padding-left: 0; /* Removes default padding */
+    
+            /* Custom body styling */
+            .custom-card-body {
+                padding: 20px;
             }
-            .outline li {
-                margin-bottom: 10px; /* More space between items */
-                font-size: 16px; /* Larger font for better readability */
-                line-height: 1.5; /* Improved line spacing */
+
+            /* Collapse icon styling */
+            .collapse-icon {
+                background: none;
+                border: none;
+                padding: 0;
+                position: absolute;
+                right: 10px;
+                top: 50%;
+                transform: translateY(-50%) rotate(0deg);
+                cursor: pointer;
+                font-size: 16px;
+                /* Transition for rotation */
+                transition: transform 0.2s;
+            }
+            /* Remove outline when button is focused */
+            .collapse-icon:focus {
+                outline: none;
+            }
+            /* Rotate icon when expanded */
+            .collapse-icon[aria-expanded="true"] {
+                transform: translateY(-50%) rotate(90deg);
             }
         </style>
-        <div class="outline">
-            <ul>
-                <li>1. Abstract</li>
-                <li>2. Introduction</li>
+
+        <div class="custom-card">
+            <div class="custom-card-body">
+                <ul class="list-group list-group-flush">
     '''
-    for item in outline_list:
-        html += f'<li>{item[1]}</li>'
-    html += '</ul></div></div>'
+
+    # 添加默认的一级标题内容
+    default_items = [[1, '1. Abstract'], [1, '2. Introduction']]
+
+    # 将默认项与解析出的纲要列表合并
+    combined_list = default_items + outline_list
+
+    # 构建树形结构，以便检测一级标题是否有子标题
+    def build_outline_tree(outline_list):
+        sections = []
+        stack = []
+        for level_str, content in outline_list:
+            level = int(level_str)
+            node = {'level': level, 'content': content, 'subitems': []}
+            if level == 1:
+                sections.append(node)
+                stack = [node]
+            else:
+                # 弹出栈中比当前级别更高的节点
+                while stack and stack[-1]['level'] >= level:
+                    stack.pop()
+                if stack:
+                    parent = stack[-1]
+                    parent['subitems'].append(node)
+                    stack.append(node)
+                else:
+                    # 如果没有父节点，忽略该节点或根据需要处理
+                    pass
+        return sections
+
+    sections = build_outline_tree(combined_list)
+
+    # 生成 HTML
+    def generate_html_from_sections(sections):
+        html = ''
+        section_index = 1  # 用于生成唯一的 ID
+
+        def generate_node_html(node):
+            nonlocal section_index
+            level = node['level']
+            content = node['content']
+            has_subitems = len(node['subitems']) > 0
+            if level == 1:
+                # 一级标题
+                if has_subitems:
+                    # 如果有子标题，添加下拉图标和可折叠功能
+                    section_id = f"outline_collapseSection{section_index}"
+                    section_index += 1
+                    node_html = f'''
+                        <li class="list-group-item level-1">
+                            {content}
+                            <button type="button" class="collapse-icon" data-toggle="collapse" data-target="#{section_id}" aria-expanded="false">&#9654;</button>
+                            <ul class="list-group collapse" id="{section_id}">
+                    '''
+                    for subitem in node['subitems']:
+                        node_html += generate_node_html(subitem)
+                    node_html += '''
+                            </ul>
+                        </li>
+                    '''
+                else:
+                    # 如果没有子标题，不显示下拉图标
+                    node_html = f'''
+                        <li class="list-group-item level-1">
+                            {content}
+                        </li>
+                    '''
+            else:
+                # 二级或三级标题
+                node_html = f'<li class="list-group-item level-{level}">{content}</li>'
+            return node_html
+
+        for section in sections:
+            html += generate_node_html(section)
+
+        return html
+
+    html += generate_html_from_sections(sections)
+
+    html += '''
+                </ul>
+            </div>
+        </div>
+        <!-- 添加 JavaScript 来处理图标的旋转 -->
+        <script>
+        $(document).ready(function(){
+            // 使用 aria-expanded 属性来控制图标的旋转，无需额外的 JavaScript
+        });
+        </script>
+    </div>
+    '''
     print(html)
     print('+++++++++++++++++++++++++++++++++')
     return html
