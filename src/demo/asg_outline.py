@@ -10,7 +10,7 @@ class OutlineGenerator():
     def __init__(self, pipeline, df, cluster_names, mode='desp'):
         self.pipeline = pipeline
         # self.pipeline.model.load_adapter("technicolor/llama3.1_8b_outline_generation")
-        self.pipeline.model.enable_adapters()
+        self.pipeline.model.set_adapter("outline")
         self.df = df
         self.cluster = [{'label': i, 'name': cluster_names[i]} for i in range(len(cluster_names))]
         self._add_cluster_info()
@@ -156,11 +156,12 @@ def generateOutlineHTML(survey_id):
     <div class="container-fluid w-50 d-flex flex-column justify-content-center align-items-center">
 
         <style>
-            /* Styling for different hierarchy levels */
+            /* 不同层级的样式 */
             .level-1 {
                 font-size: 20px;
                 font-weight: bold;
                 position: relative;
+                padding-right: 40px; /* 为箭头留出空间 */
             }
             .level-2 {
                 font-size: 18px;
@@ -174,7 +175,7 @@ def generateOutlineHTML(survey_id):
                 border: none;
             }
             
-            /* Custom card style */
+            /* 自定义卡片样式 */
             .custom-card {
                 background-color: #fff;
                 border-radius: 8px;
@@ -185,13 +186,13 @@ def generateOutlineHTML(survey_id):
                 box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1), 
                             0 6px 20px rgba(0, 0, 0, 0.1);
             }
-    
-            /* Custom body styling */
+
+            /* 自定义卡片主体样式 */
             .custom-card-body {
                 padding: 20px;
             }
 
-            /* Collapse icon styling */
+            /* 折叠图标样式 */
             .collapse-icon {
                 background: none;
                 border: none;
@@ -202,15 +203,18 @@ def generateOutlineHTML(survey_id):
                 transform: translateY(-50%) rotate(0deg);
                 cursor: pointer;
                 font-size: 16px;
-                /* Transition for rotation */
+                /* 旋转过渡效果 */
                 transition: transform 0.2s;
             }
-            /* Remove outline when button is focused */
+            /* 去除按钮聚焦时的轮廓 */
             .collapse-icon:focus {
                 outline: none;
             }
-            /* Rotate icon when expanded */
-            .collapse-icon[aria-expanded="true"] {
+            /* 当折叠展开时旋转图标 */
+            .collapsed .collapse-icon {
+                transform: translateY(-50%) rotate(0deg);
+            }
+            .in .collapse-icon {
                 transform: translateY(-50%) rotate(90deg);
             }
         </style>
@@ -230,23 +234,25 @@ def generateOutlineHTML(survey_id):
     def build_outline_tree(outline_list):
         sections = []
         stack = []
-        for level_str, content in outline_list:
-            level = int(level_str)
+        for level, content in outline_list:
+            level = int(level)
             node = {'level': level, 'content': content, 'subitems': []}
             if level == 1:
                 sections.append(node)
                 stack = [node]
-            else:
-                # 弹出栈中比当前级别更高的节点
-                while stack and stack[-1]['level'] >= level:
-                    stack.pop()
+            elif level == 2:
                 if stack:
                     parent = stack[-1]
                     parent['subitems'].append(node)
-                    stack.append(node)
+                    # stack.append(node)
                 else:
-                    # 如果没有父节点，忽略该节点或根据需要处理
-                    pass
+                    sections.append(node)
+            elif level == 3:
+                if stack:
+                    parent = stack[-1]
+                    parent['subitems'].append(node)
+                else:
+                    sections.append(node)
         return sections
 
     sections = build_outline_tree(combined_list)
@@ -270,8 +276,10 @@ def generateOutlineHTML(survey_id):
                     node_html = f'''
                         <li class="list-group-item level-1">
                             {content}
-                            <button type="button" class="collapse-icon" data-toggle="collapse" data-target="#{section_id}" aria-expanded="false">&#9654;</button>
-                            <ul class="list-group collapse" id="{section_id}">
+                            <a class="collapsed" data-toggle="collapse" data-target="#{section_id}" aria-expanded="true" aria-controls="{section_id}">
+                                &#9654; <!-- 右箭头表示折叠状态 -->
+                            </a>
+                            <ul class="list-group collapse in" id="{section_id}">
                     '''
                     for subitem in node['subitems']:
                         node_html += generate_node_html(subitem)
@@ -286,9 +294,11 @@ def generateOutlineHTML(survey_id):
                             {content}
                         </li>
                     '''
-            else:
-                # 二级或三级标题
-                node_html = f'<li class="list-group-item level-{level}">{content}</li>'
+            elif level == 2:
+                    node_html = f'<li class="list-group-item level-2">{content}</li>'
+            elif level == 3:
+                # 三级标题直接显示，已经在二级标题中处理
+                node_html = f'<li class="list-group-item level-3">{content}</li>'
             return node_html
 
         for section in sections:
@@ -302,10 +312,13 @@ def generateOutlineHTML(survey_id):
                 </ul>
             </div>
         </div>
-        <!-- 添加 JavaScript 来处理图标的旋转 -->
+        <!-- 添加 Bootstrap v3.3.0 的 JavaScript 来处理折叠功能 -->
         <script>
         $(document).ready(function(){
-            // 使用 aria-expanded 属性来控制图标的旋转，无需额外的 JavaScript
+            // 切换箭头方向
+            $('.collapsed').click(function(){
+                $(this).toggleClass('collapsed');
+            });
         });
         </script>
     </div>
