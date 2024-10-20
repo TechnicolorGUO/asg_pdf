@@ -335,10 +335,12 @@ def generateOutlineHTML(survey_id):
 
 def generateSurvey(survey_id, pipeline, title, context):
     outline = parseOutline(survey_id)
+    default_items = [[1, '1. Abstract'], [1, '2. Introduction']]
+    outline = str(default_items + outline)
     
     client = getQwenClient()
 
-    temp = {"survey_id":survey_id, "survey_title":title, "context": context, "abstract": "", "introduction": "", "content":"", "conclusion": ""}
+    temp = {"survey_id":survey_id, "outline":outline, "survey_title":title, "context": context, "abstract": "", "introduction": "", "content":"", "conclusion": "","html":""}
 
     generated_survey_paper = generate_survey_paper(outline, context, client)
     print("Generated Survey Paper:\n", generated_survey_paper)
@@ -358,14 +360,55 @@ def generateSurvey(survey_id, pipeline, title, context):
     temp["content"] = generated_survey_paper
     temp["conclusion"] = conclusion
 
-    df.DataFrame(temp, index=[0]).to_json(f'./src/static/data/txt/{survey_id}/generated_result.json')
+    with open(f'./src/static/data/txt/{survey_id}/generated_result.json', 'w') as f:
+        json.dump(temp, f)
+
+    print("Survey has been saved to static.")
 
     return
 
         
 
 if __name__ == '__main__':
-    generateOutlineHTML('test')
+    model_id = "meta-llama/Meta-Llama-3.1-8B-Instruct"
+
+    context = '''
+    Many paradigms have been proposed to asses informativeness of data samples for active learning. One of the popular approaches is selecting the most uncertain data sample, i.e the data sample in which current classifier is least confident. Some other approaches are selecting the sample which yields a model with minimum risk or the data sample which yields fastest convergence in gradient based methods.//
+    An active under-sampling approach is presented in this paper to change the data distribution of training datasets, and improve the classification accuracy of minority classes while maintaining overall classification performance.//
+    In this paper, we propose an uncertainty-based active learning algorithm which requires only samples of one class and a set of unlabeled data in order to operate.//
+    The principal contribution of our work is twofold: First, we use Bayes’ rule and density estimation to avoid the need to have a model of all classes for computing the uncertainty measure.//
+    This technique reduces the number of input parameters of the problem. At the rest of this paper, we first review recent related works in the fields of active learning and active one-class learning (section II).//
+    The classifier predicts that all the samples are non-fraud, it will have a quite high accuracy. However, for problems like fraud detection, minority class classification accuracy is more critical.//
+    The algorithm used and the features selected are always the key points at design time, and many experiments are needed to select the final algorithm and the best suited feature set.//
+    Active learning works by selecting among unlabeled data, the most informative data sample. The informativeness of a sample is the amount of accuracy gain achieved after adding it to the training set.//
+    Some other approaches are selecting the sample which yields a model with minimum risk or the data sample which yields fastest convergence in gradient based methods.//
+    In this paper, we propose a novel approach reducing each within group error, BABoost, that is a variant of AdaBoost.//
+    Simulations on different unbalanced distribution data and experiments performed on several real datasets show that the new method is able to achieve a lower within group error.//
+    Active learning with early stopping can achieve a faster and scalable solution without sacrificing prediction performance.//
+    We also propose an efficient Support Vector Machine (SVM) active learning strategy which queries a small pool of data at each iterative step instead of querying the entire dataset.//
+    The second part consists of applying a treatment method and inducing a classifier for each class distribution.//
+    This time we measured the percentage of the performance loss that was recovered by the treatment method.//
+    We used two well-known over-sampling methods, random over-sampling and SMOTE.//
+    We tested our proposed technique on a sample of three representative functional genomic problems: splice site, protein subcellular localization and phosphorylation site prediction problems.//
+    Among the possible PTMs, phosphorylation is the most studied and perhaps the most important.//
+    The second part consists of applying a treatment method and inducing a classifier for each class distribution.//
+    We show that Active Learning (AL) strategy can be a more efficient alternative to resampling methods to form a balanced training set for the learner in early stages of the learning.//
+    '''
+
+    Global_pipeline = transformers.pipeline(
+    "text-generation",
+    model=model_id,
+    model_kwargs={"torch_dtype": torch.bfloat16},
+    token = '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',
+    device_map="auto",
+)
+    Global_pipeline.model.load_adapter(peft_model_id = "technicolor/llama3.1_8b_outline_generation", adapter_name="outline")
+    Global_pipeline.model.load_adapter(peft_model_id ="technicolor/llama3.1_8b_conclusion_generation", adapter_name="conclusion")
+    Global_pipeline.model.load_adapter(peft_model_id ="technicolor/llama3.1_8b_abstract_generation", adapter_name="abstract")
+
+
+    # generateOutlineHTML('test')
+    generateSurvey("test", Global_pipeline,"Predictive modeling of imbalanced data",context)
 
 
 

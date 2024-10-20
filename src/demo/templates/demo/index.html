@@ -1055,28 +1055,51 @@ function select_sections() {
 
     }
 
-	function display_survey(){
+	function display_survey() {
+    // 从 views 获取 survey_id
+    $.ajax({
+      url: '/get_survey_id', // 假设你的后端视图在这个 URL 上返回 survey_id
+      method: 'GET',
+      dataType: 'json',
+      success: function(data) {
+        var survey_id = data.survey_id; // 假设 views 返回的 JSON 格式是 { "survey_id": "123" }
 
-        document.getElementById("survey_content").innerHTML+= "<h1>" + "A Survey of " +document.getElementById("topic_input_box").value + "</h1>";
+        // 获取 JSON 文件内容
+        $.ajax({
+          url: '/static/data/txt/' + survey_id + '/generated_result.json',
+          method: 'GET',
+          dataType: 'json',
+          success: function(surveyData) {
+            // 显示 Survey 标题
+            var topic = document.getElementById("topic_input_box").value;
+            document.getElementById("survey_content").innerHTML += "<h1>A Survey of " + topic + "</h1>";
 
+            // 显示 Survey 内容
+            if (typeof surveyData.content === 'object') {
+			document.getElementById("survey_content").innerHTML += "<p>" + JSON.stringify(surveyData.content) + "</p>";
+			} else {
+			document.getElementById("survey_content").innerHTML += "<p>" + surveyData.content + "</p>";
+			}
 
+            // 显示 References 标题
+            document.getElementById("survey_content").innerHTML += "<h2 style='padding: 0px; color: black'>References</h2>";
 
-        document.getElementById("survey_content").innerHTML+= "<h2 style=\"padding: 0px; color: black\"> References </h2>";
-        document.getElementById("survey_content").innerHTML+= document.getElementById("references").innerHTML;
+            // 显示 References 的内容
+            document.getElementById("survey_content").innerHTML += surveyData.references;
 
-
-        $("#survey").attr("style","display:inline;");
-        /*
-        $("#template").popover({
-            html : true,
-            // delay:{show:500, hide:1000},
-            // container: 'body',
-            content: function() {
-                return content();
-            }
+            // 显示 Survey 区域
+            $("#survey").attr("style", "display:inline;");
+          },
+          error: function() {
+            alert("Failed to load survey content.");
+          }
         });
-        */
-    }
+      },
+      error: function() {
+        alert("Failed to get survey ID.");
+      }
+    });
+  }
 
 </script>
 

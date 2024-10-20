@@ -6,6 +6,7 @@ class ConclusionGenerator:
         if mode == 'lora' or mode == 'test':
             if mode == 'lora':
                 self.pipeline.model.set_adapter("conclusion")
+                print("Adapter conclusion loaded")
 
             system_prompt = f'''You are a helpful assistant that help to generate the conclusion of the survey paper given the survey title and survey introduction.'''
             # user_prompt = {"survey_title":survey_title, "claims":cluster_with_claims}
@@ -41,6 +42,8 @@ if __name__ == '__main__':
     )
     Global_pipeline.model.load_adapter(peft_model_id = "technicolor/llama3.1_8b_outline_generation", adapter_name="outline")
     Global_pipeline.model.load_adapter(peft_model_id ="technicolor/llama3.1_8b_conclusion_generation", adapter_name="conclusion")
+    Global_pipeline.model.load_adapter(peft_model_id ="technicolor/llama3.1_8b_abstract_generation", adapter_name="abstract")
+
 
     title = "A Survey of Large Language Models"
     intro = '''L

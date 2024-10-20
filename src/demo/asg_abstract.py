@@ -6,6 +6,7 @@ class AbstractGenerator:
         if mode == 'lora' or mode == 'test':
             if mode == 'lora':
                 self.pipeline.model.set_adapter("abstract")
+                print("Adapter abstract loaded")
 
             system_prompt = f'''You are a helpful assistant that help to generate the abstract of the survey paper given the survey title and survey introduction.'''
             # user_prompt = {"survey_title":survey_title, "claims":cluster_with_claims}
@@ -41,7 +42,7 @@ if __name__ == '__main__':
     )
     Global_pipeline.model.load_adapter(peft_model_id = "technicolor/llama3.1_8b_outline_generation", adapter_name="outline")
     Global_pipeline.model.load_adapter(peft_model_id ="technicolor/llama3.1_8b_abstract_generation", adapter_name="abstract")
-
+    Global_pipeline.model.load_adapter(peft_model_id ="technicolor/llama3.1_8b_conclusion_generation", adapter_name="conclusion")
     title = "A Survey of Large Language Models"
     intro = '''L
 ANGUAGE is a prominent ability in human beings to

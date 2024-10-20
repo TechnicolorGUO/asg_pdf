@@ -142,7 +142,7 @@ Begin your response immediately with the list, and do not include any other text
 
     outputs = pipeline(
         prompt,
-        max_new_tokens=300,
+        max_new_tokens=512,
         temperature=0.3,  # Lower temperature for more focused output
         num_return_sequences=1,
         eos_token_id=pipeline.tokenizer.eos_token_id,

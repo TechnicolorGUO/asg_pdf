@@ -941,6 +941,11 @@ def get_survey(request):
     survey_dict = get_survey_text()
     survey_dict = json.dumps(survey_dict)
     return HttpResponse(survey_dict)
+    
+@csrf_exempt
+def get_survey_id(request):
+    global Global_survey_id
+    return JsonResponse({"survey_id": Global_survey_id})
 
 
 def get_refs(topic):
