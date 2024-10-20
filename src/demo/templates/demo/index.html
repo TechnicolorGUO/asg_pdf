@@ -428,7 +428,7 @@ FONTS & ICONS
 		</div>
 
 
-		<h2 align="left"> Please choose the sections (subsections) you want to generate (Outline Enhanced by ChatGPT): </h2>
+		<h2 align="left"> The Outline of the generated survey: </h2>
 		<form action="" method="post", id="sections_">
 			{% csrf_token %}
 		</form>
@@ -437,7 +437,7 @@ FONTS & ICONS
 
 		<br>
 		<div style="text-align: center">
-			<input type="button" class="btn btn-default" onclick="select_sections()" value="Confirm">
+			<input type="button" class="btn btn-default" onclick="display_survey()" value="Confirm">
 		</div>
 	</div>
 
@@ -445,7 +445,7 @@ FONTS & ICONS
      Content Modification
     ============================ -->
 	<div class="col-md-12" style="display: none" id="modification">
-		<br>
+		<!-- <br>
 		<div class="alert alert-info alert-dismissable" style="height: 100px">
 			<button type="button" class="close" data-dismiss="alert"
 					aria-hidden="true">
@@ -463,7 +463,7 @@ FONTS & ICONS
 		<br>
 		<div style="text-align: center">
 			<input type="button" class="btn btn-default" onclick="display_survey()" value="Confirm">
-		</div>
+		</div> -->
 	</div>
 
 
@@ -1059,58 +1059,7 @@ function select_sections() {
 
         document.getElementById("survey_content").innerHTML+= "<h1>" + "A Survey of " +document.getElementById("topic_input_box").value + "</h1>";
 
-        if (document.getElementById("section_abstract")) {
-            document.getElementById("survey_content").innerHTML+= "<h2 style=\"padding: 0px; color: black\">Abstract</h2>";
-            document.getElementById("survey_content").innerHTML+= "<p align=\"justify\">" + document.getElementById("section_abstract").value + "</p>";
-        }
 
-        document.getElementById("survey_content").innerHTML+= "<h2 style=\"padding: 0px; color: black\"> Introduction </h2>";
-        var len = document.getElementsByName("method_sub_title").length;
-        var intro_subtitles = ['Background', 'Methodologies', 'Reminder'];
-        for(var i=0; i<len; i++) {
-            document.getElementById("survey_content").innerHTML+= "<h3>" + intro_subtitles[i] + "</h3>";
-            document.getElementById("survey_content").innerHTML+= "<p>" + document.getElementsByName("intro_sub_content")[i].value + "</p>";
-        }
-
-
-        if (document.getElementById("section_c_and_c")) {
-            document.getElementById("survey_content").innerHTML+= "<h2 style=\"padding: 0px; color: black\"> Imbalanced Data: Causes and Characteristics </h2>";
-            document.getElementById("survey_content").innerHTML+= "<p align=\"justify\">" + document.getElementById("section_c_and_c").value + "</p>";
-        }
-
-        if (document.getElementById("section_evaluation")) {
-            document.getElementById("survey_content").innerHTML+= "<h2 style=\"padding: 0px; color: black\"> Evaluation Metrics for Imbalanced Data </h2>";
-            document.getElementById("survey_content").innerHTML+= "<p align=\"justify\">" + document.getElementById("section_evaluation").value + "</p>";
-        }
-
-
-        if (document.getElementById("section_methodology")) {
-            document.getElementById("survey_content").innerHTML+= "<h2 style=\"padding: 0px; color: black\">Techniques for Handling Imbalanced Data</h2>";
-            document.getElementById("survey_content").innerHTML+= "<p align=\"justify\">" + document.getElementById("section_methodology").value + "</p>";
-            var len = document.getElementsByName("method_sub_title").length;
-            for(var i=0; i<len; i++) {
-                document.getElementById("survey_content").innerHTML+= "<h3>" + document.getElementsByName("method_sub_title")[i].value + "</h3>";
-                document.getElementById("survey_content").innerHTML+= "<p>" + document.getElementsByName("method_sub_content")[i].value + "</p>";
-            }
-
-        }
-
-        if (document.getElementById("section_app")) {
-            document.getElementById("survey_content").innerHTML+= "<h2 style=\"padding: 0px; color: black\"> Applications of Predictive Modeling on Imbalanced Data </h2>";
-            document.getElementById("survey_content").innerHTML+= "<p align=\"justify\">" + document.getElementById("section_app").value + "</p>";
-        }
-
-        if (document.getElementById("section_clg")) {
-            document.getElementById("survey_content").innerHTML+= "<h2 style=\"padding: 0px; color: black\"> Challenges and Open Issues </h2>";
-            document.getElementById("survey_content").innerHTML+= "<p align=\"justify\">" + document.getElementById("section_clg").value + "</p>";
-        }
-
-
-
-        if (document.getElementById("section_conclusion")) {
-            document.getElementById("survey_content").innerHTML+= "<h2 style=\"padding: 0px; color: black\">Conclusion and Future Directions </h2>";
-            document.getElementById("survey_content").innerHTML+= "<p align=\"justify\">" + document.getElementById("section_conclusion").value + "</p>";
-        }
 
         document.getElementById("survey_content").innerHTML+= "<h2 style=\"padding: 0px; color: black\"> References </h2>";
         document.getElementById("survey_content").innerHTML+= document.getElementById("references").innerHTML;

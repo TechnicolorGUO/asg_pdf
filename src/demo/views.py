@@ -764,6 +764,12 @@ def automatic_taxonomy(request):
     print(cate_list)
     cate_list = json.dumps(cate_list)
 
+
+    cluster_info = {category_label_summarized[i]:ref_titles[i] for i in range(len(category_label_summarized))}
+    cluster_info_path = f'./src/static/data/info/{Global_survey_id}/cluster_info.json'
+    with open(cluster_info_path, 'w') as outfile:
+        json.dump(cluster_info, outfile, indent=4, ensure_ascii=False)
+
     
     outline_generator = OutlineGenerator(Global_pipeline, Global_df_selected, Global_cluster_names)
     outline_generator.get_cluster_info()

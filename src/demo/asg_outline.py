@@ -5,6 +5,10 @@ import os
 import json
 import re
 import ast
+from .survey_generator_api import *
+from .asg_abstract import AbstractGenerator
+from .asg_conclusion import ConclusionGenerator
+import pandas as df
 
 class OutlineGenerator():
     def __init__(self, pipeline, df, cluster_names, mode='desp'):
@@ -326,8 +330,43 @@ def generateOutlineHTML(survey_id):
     print(html)
     print('+++++++++++++++++++++++++++++++++')
     return html
+
+
+
+def generateSurvey(survey_id, pipeline, title, context):
+    outline = parseOutline(survey_id)
+    
+    client = getQwenClient()
+
+    temp = {"survey_id":survey_id, "survey_title":title, "context": context, "abstract": "", "introduction": "", "content":"", "conclusion": ""}
+
+    generated_survey_paper = generate_survey_paper(outline, context, client)
+    print("Generated Survey Paper:\n", generated_survey_paper)
+
+    generated_introduction = generate_introduction(generated_survey_paper, client)
+    print("\nGenerated Introduction:\n", generated_introduction)
+
+    abs_generator = AbstractGenerator(pipeline)
+    abstract = abs_generator.generate(title, generated_introduction)
+    print("\nGenerated Abstract:\n", abstract)
+    con_generator = ConclusionGenerator(pipeline)
+    conclusion = con_generator.generate(title, generated_introduction)
+    print("\nGenerated Conclusion:\n", conclusion)
+
+    temp["abstract"] = abstract
+    temp["introduction"] = generated_introduction
+    temp["content"] = generated_survey_paper
+    temp["conclusion"] = conclusion
+
+    df.DataFrame(temp, index=[0]).to_json(f'./src/static/data/txt/{survey_id}/generated_result.json')
+
+    return
+
         
 
 if __name__ == '__main__':
     generateOutlineHTML('test')
+
+
+
 
