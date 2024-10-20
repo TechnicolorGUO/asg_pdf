@@ -1,5 +1,7 @@
 from transformers import AutoTokenizer, AutoModelForCausalLM, pipeline
 from langchain.prompts import PromptTemplate
+from langchain_huggingface import HuggingFaceEmbeddings
+from openai import OpenAI
 import transformers
 import ast
 import uuid
@@ -7,11 +9,9 @@ import re
 import os
 import json
 import chromadb
-from langchain_huggingface import HuggingFaceEmbeddings
 import time
 import openai
 import dotenv
-from openai import OpenAI
 import json
 import base64
 
@@ -71,7 +71,7 @@ def generate_introduction(context, client):
     template = '''
 Directly generate an introduction based on the following context (a survey paper). 
 The introduction includes 4 elements: background of the general topic (1 paragraph), main problems mentioned in the paper (1 paragraph), contributions of the survey paper (2 paragraphs), and the aim and structure of the survey paper (1 paragraph). 
-The introduction should strictly follow the style of a standard academic introduction, with the total length of  words. Do not include any headings (words like "Background:", "Problems:") or extra explanations except for the introduction.
+The introduction should strictly follow the style of a standard academic introduction, with the total length of 500-700 words. Do not include any headings (words like "Background:", "Problems:") or extra explanations except for the introduction.
 
 Context:
 {context}
@@ -95,6 +95,62 @@ Introduction:
     if len(paragraphs) < 5:
         # 确保生成的引言包含五个段落
         answer = "\n\n".join(paragraphs[:5])
+    else:
+        answer = "\n\n".join(paragraphs)
+
+    return answer
+
+def generate_introduction_alternate(context, client):
+
+    template_explicit_section = '''
+Directly generate an introduction based on the following context (a survey paper).
+The introduction should include six parts: 
+1. Background of the general topic (1 paragraph).
+2. The research topic of this survey paper (1 paragraph).
+3. A summary of the first section following the Introduction (1 paragraph).
+4. A summary of the second section following the Introduction (1 paragraph).
+5. A summary of the third section following the Introduction (1 paragraph).
+6. Contributions of the survey paper (1 paragraph).
+The introduction should strictly follow the style of a standard academic introduction, with the total length limited to 600-700 words. Do not include any headings (words like "Background:", "Summary:") or extra explanations except for the introduction.
+
+Context:
+{context}
+
+Introduction:
+'''
+
+    template = '''
+Directly generate an introduction based on the following context (a survey paper).
+The introduction should include 4 parts (6 paragraphs): 
+1. Background of the general topic (1 paragraph).
+2. The research topic of this survey paper (1 paragraph).
+3. A detailed overview of the content between the Introduction and Future direction / Conclusion (3 paragraphs).
+4. Contributions of the survey paper (1 paragraph).
+The introduction should strictly follow the style of a standard academic introduction, with the total length limited to 600-700 words. Do not include any headings (words like "Background:", "Summary:") or extra explanations except for the introduction.
+Do not include any sentences like "The first section...", "The second section...".
+
+Context:
+{context}
+
+Introduction:
+'''
+
+    formatted_prompt = template.format(context=context)
+    response = generateResponseIntroduction(client, formatted_prompt)
+
+    # 从生成的结果中提取答案
+    answer_start = "Introduction:"
+    start_index = response.find(answer_start)
+    if start_index != -1:
+        answer = response[start_index + len(answer_start):].strip()
+    else:
+        answer = response.strip()
+
+    # 将生成的引言分段
+    paragraphs = answer.split("\n\n")
+    if len(paragraphs) < 6:
+        # 确保生成的引言包含六个段落
+        answer = "\n\n".join(paragraphs[:6])
     else:
         answer = "\n\n".join(paragraphs)
 
@@ -152,6 +208,58 @@ def process_outline_with_empty_sections(outline_list, selected_outline, context,
                 content += f"### {section_title}\n\n"
     
     return content
+
+def process_outline_with_empty_sections_new(outline_list, selected_outline, context_list, client):
+    content = ""
+    context_dict = {title: ctx for (lvl, title), ctx in zip(selected_outline, context_list)}
+    
+    for level, section_title in outline_list:
+        if (level, section_title) in selected_outline:
+            if level == 1:
+                content += f"# {section_title}\n"
+            elif level == 2:
+                content += f"## {section_title}\n"
+            elif level == 3:
+                content += f"### {section_title}\n"
+            
+            section_content = generate_survey_section(context_dict[section_title], client, section_title)
+            content += f"{section_content}\n\n"
+        else:
+            if level == 1:
+                content += f"# {section_title}\n\n"
+            elif level == 2:
+                content += f"## {section_title}\n\n"
+            elif level == 3:
+                content += f"### {section_title}\n\n"
+
+    return content
+
+def generate_survey_paper_new(outline, context_list, client):
+    parsed_outline = ast.literal_eval(outline)
+    selected_subsections = parse_outline_with_subsections(outline)
+
+    full_survey_content = process_outline_with_empty_sections_new(parsed_outline, selected_subsections, context_list, client)
+
+    generated_introduction = generate_introduction_alternate(full_survey_content, client)
+    
+    introduction_pattern = r"(# 2 Introduction\n)(.*?)(\n# 3 )"
+    full_survey_content = re.sub(introduction_pattern, rf"\1{generated_introduction}\n\3", full_survey_content, flags=re.DOTALL)
+
+    return full_survey_content
+context_list = [
+    "Context for Predictive Modeling on Imbalance Data",
+    "Context for Class Imbalance as a Major Challenge",
+    "Context for Survey Scope and Organization",
+    "Context for Dealing with Class Imbalance",
+    "Context for Clustering Machine Learning Methods",
+    "Context for Microtubule Dynamics and Behavior",
+    "Context for Other Methods",
+    "Context for Conclusion",
+]
+
+# 新的调用方式
+# generated_survey_paper = generate_survey_paper_new(outline1, context_list, client)
+
 
 context = '''
 Many paradigms have been proposed to asses informativeness of data samples for active learning. One of the popular approaches is selecting the most uncertain data sample, i.e the data sample in which current classifier is least confident. Some other approaches are selecting the sample which yields a model with minimum risk or the data sample which yields fastest convergence in gradient based methods.//
@@ -226,7 +334,7 @@ def generate_survey_paper(outline, context, client):
     full_survey_content = process_outline_with_empty_sections(parsed_outline, selected_subsections, context, client)
 
     # 替换生成的引言部分
-    generated_introduction = generate_introduction(full_survey_content, client)
+    generated_introduction = generate_introduction_alternate(full_survey_content, client)
     
     # 正则表达式匹配引言内容，但保持标题完整
     introduction_pattern = r"(# 2 Introduction\n)(.*?)(\n# 3 )"  # 匹配从 # 2 Introduction 到下一个顶级 section 之间的内容
@@ -258,10 +366,10 @@ outline1 = """
     [1, '8 References']
 ]
 """
-# client = getQwenClient()
+client = getQwenClient()
 
-# generated_survey_paper = generate_survey_paper(outline1, context, client)
-# print("Generated Survey Paper:\n", generated_survey_paper)
+generated_survey_paper = generate_survey_paper(outline1, context, client)
+print("Generated Survey Paper:\n", generated_survey_paper)
 
 # generated_introduction = generate_introduction(generated_survey_paper, client)
 # print("\nGenerated Introduction:\n", generated_introduction)
