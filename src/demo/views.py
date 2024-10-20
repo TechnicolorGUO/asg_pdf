@@ -107,6 +107,8 @@ Global_pipeline = transformers.pipeline(
 )
 Global_pipeline.model.load_adapter(peft_model_id = "technicolor/llama3.1_8b_outline_generation", adapter_name="outline")
 Global_pipeline.model.load_adapter(peft_model_id ="technicolor/llama3.1_8b_abstract_generation", adapter_name="abstract")
+Global_pipeline.model.load_adapter(peft_model_id ="technicolor/llama3.1_8b_conclusion_generation", adapter_name="conclusion")
+
 # Global_pipeline.model.disable_adapters()
 
 class reference_collection(object):
