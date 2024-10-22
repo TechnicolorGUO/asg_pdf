@@ -15,7 +15,7 @@ class AbstractGenerator:
             messages = [
                 {"role": "system", "content": system_prompt}, 
                 {"role": "user", "content": user_prompt},
-                {"role": "assistant", "content":"Abstract: "}
+                {"role": "assistant", "content":"Abstract: This survey "}
                 ] 
 
             outputs = self.pipeline(

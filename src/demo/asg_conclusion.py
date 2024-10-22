@@ -15,7 +15,7 @@ class ConclusionGenerator:
             messages = [
                 {"role": "system", "content": system_prompt}, 
                 {"role": "user", "content": user_prompt},
-                {"role": "assistant", "content":"Conclusion: "}
+                {"role": "assistant", "content":"Conclusion: This survey "}
                 ] 
 
             outputs = self.pipeline(

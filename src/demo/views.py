@@ -37,7 +37,7 @@ from .asg_loader import DocumentLoading
 # from .parse import DocumentLoading
 from .asg_retriever import process_pdf, query_embeddings
 from .asg_generator import generate,generate_sentence_patterns
-from .asg_outline import OutlineGenerator, generateOutlineHTML
+from .asg_outline import OutlineGenerator, generateOutlineHTML, generateSurvey
 import glob
 import nltk
 
@@ -944,7 +944,8 @@ def get_survey(request):
     
 @csrf_exempt
 def get_survey_id(request):
-    global Global_survey_id
+    global Global_survey_id, Global_survey_title, Global_collection_names, Global_pipeline
+    generateSurvey(Global_survey_id, Global_survey_title, Global_collection_names, Global_pipeline)
     return JsonResponse({"survey_id": Global_survey_id})
 
 

@@ -88,7 +88,7 @@ class OutlineGenerator():
         #     together with the cluster names and the descriptions for entities in each cluster.
         #     '''
         system_prompt = f'''Generate the outline of the survey paper following the format of the example : [[1, '1 Introduction'], [1, '2 Perturbations of (co)differentials'], [2, '2.1 Derivations of the tensor algebra'], [more sections...]].\
-        The first element in the sub-list refers to the hierachy of the section name (from 1 to 3).\
+        The first element in the sub-list refers to the hierachy of the section name (from 1 to 3). Sections like Introduction and Conclusion should have the highest level (1)\
         The second element in the sub-list refers to the section name.
         '''
 
@@ -99,7 +99,7 @@ class OutlineGenerator():
         messages = [
             {"role": "system", "content": system_prompt}, 
             {"role": "user", "content": user_prompt},
-            {"role": "assistant", "content":"[[1, '1 Abstract'], [1, '2 Introduction'], "}
+            {"role": "assistant", "content":"[[1, '1 Abstract'], [1, '2 Introduction'], [1, '3 Overview'], "}
             ] 
 
         outputs = self.pipeline(
@@ -229,7 +229,7 @@ def generateOutlineHTML(survey_id):
     '''
 
     # 添加默认的一级标题内容
-    default_items = [[1, '1. Abstract'], [1, '2. Introduction']]
+    default_items = [[1, '1 Abstract'], [1, '2 Introduction'], [1, '3 Overview']]
 
     # 将默认项与解析出的纲要列表合并
     combined_list = default_items + outline_list
@@ -331,18 +331,45 @@ def generateOutlineHTML(survey_id):
     print('+++++++++++++++++++++++++++++++++')
     return html
 
+def insert_section(content, section_header, section_content):
+    """
+    在 content 中找到以 section_header 开头的行，并在其后插入 section_content
+    section_header: 标题名称，例如 "Abstract" 或 "Conclusion"
+    section_content: 要插入的内容（字符串）
+    """
+    # 修改正则表达式，使得数字后的点是可选的
+    pattern = re.compile(
+        r'(^#\s+\d+\.?\s+' + re.escape(section_header) + r'\s*$)',
+        re.MULTILINE | re.IGNORECASE
+    )
+    replacement = r'\1\n\n' + section_content + '\n'
+    new_content, count = pattern.subn(replacement, content)
+    if count == 0:
+        print(f"警告: 未找到标题 '{section_header}'。无法插入内容。")
+    return new_content
 
-
-def generateSurvey(survey_id, pipeline, title, context):
+def generateSurvey(survey_id, title, collection_list, pipeline):
     outline = parseOutline(survey_id)
-    default_items = [[1, '1. Abstract'], [1, '2. Introduction']]
+    default_items = [[1, '1 Abstract'], [1, '2 Introduction'], [1, '3 Overview']]
     outline = str(default_items + outline)
     
     client = getQwenClient()
 
-    temp = {"survey_id":survey_id, "outline":outline, "survey_title":title, "context": context, "abstract": "", "introduction": "", "content":"", "conclusion": "","html":""}
+    context_list = generate_context_list(outline, collection_list)
 
-    generated_survey_paper = generate_survey_paper(outline, context, client)
+    temp = {
+        "survey_id": survey_id,
+        "outline": str(default_items), 
+        "survey_title": title,
+        "context": context_list, 
+        "abstract": "",
+        "introduction": "",
+        "content": "",
+        "conclusion": "",
+        "html": ""
+    }
+
+    generated_survey_paper = generate_survey_paper_new(outline, context_list, client)
     print("Generated Survey Paper:\n", generated_survey_paper)
 
     generated_introduction = generate_introduction(generated_survey_paper, client)
@@ -355,15 +382,21 @@ def generateSurvey(survey_id, pipeline, title, context):
     conclusion = con_generator.generate(title, generated_introduction)
     print("\nGenerated Conclusion:\n", conclusion)
 
+    abstract = abstract.replace("Abstract:", "")
+    conclusion = conclusion.replace("Conclusion:", "")
+
     temp["abstract"] = abstract
     temp["introduction"] = generated_introduction
     temp["content"] = generated_survey_paper
     temp["conclusion"] = conclusion
 
-    with open(f'./src/static/data/txt/{survey_id}/generated_result.json', 'w') as f:
-        json.dump(temp, f)
+    temp["content"] = insert_section(temp["content"], "Abstract", temp["abstract"])
+    temp["content"] = insert_section(temp["content"], "Conclusion", temp["conclusion"])
 
-    print("Survey has been saved to static.")
+    output_path = f'./src/static/data/txt/{survey_id}/generated_result.json'
+    with open(output_path, 'w', encoding='utf-8') as f:
+        json.dump(temp, f, ensure_ascii=False, indent=4)
+    print(f"Survey has been saved to {output_path}.")
 
     return
 
@@ -395,6 +428,8 @@ if __name__ == '__main__':
     We show that Active Learning (AL) strategy can be a more efficient alternative to resampling methods to form a balanced training set for the learner in early stages of the learning.//
     '''
 
+    collection_list = ['activelearningfrompositiveandunlabeleddata', ]
+
     Global_pipeline = transformers.pipeline(
     "text-generation",
     model=model_id,
@@ -408,7 +443,7 @@ if __name__ == '__main__':
 
 
     # generateOutlineHTML('test')
-    generateSurvey("test", Global_pipeline,"Predictive modeling of imbalanced data",context)
+    generateSurvey("test", "Predictive modeling of imbalanced data", collection_list, Global_pipeline)
 
 
 

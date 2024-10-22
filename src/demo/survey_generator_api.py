@@ -15,6 +15,8 @@ import dotenv
 import json
 import base64
 
+from .asg_retriever import Retriever
+
 def getQwenClient(): 
     openai_api_key = "qwen2.5-72b-instruct-8eeac2dad9cc4155af49b58c6bca953f"
     openai_api_base = "https://its-tyk1.polyu.edu.hk:8080/llm/qwen2.5-72b-instruct"
@@ -342,6 +344,33 @@ def generate_survey_paper(outline, context, client):
 
     return full_survey_content
 
+def query_embedding_for_title(collection_name: str, title: str, n_results: int = 1):
+    final_context = ""
+    embedder = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
+    retriever = Retriever()
+    title_embedding = embedder.embed_query(title)
+    query_result = retriever.query_chroma(collection_name=collection_name, query_embeddings=[title_embedding], n_results=n_results)
+    query_result_chunks = query_result["documents"][0]
+    for chunk in query_result_chunks:
+        final_context += chunk.strip() + "//\n"
+    return final_context
+
+    
+def generate_context_list(outline, collection_list):
+    context_list = []
+    subsections = parse_outline_with_subsections(outline)
+    for level, title in subsections:
+        context_temp = ""
+        for i in range(len(collection_list)):
+            context = query_embedding_for_title(collection_list[i], title)
+            context_temp += context
+            context_temp += "\n"
+        context_list.append(context_temp)
+    print(f"Context list generated with length {len(context_list)}.")
+    return context_list
+
+
+
 outline1 = """
 [
     [1, '1 Abstract'], 
@@ -366,10 +395,10 @@ outline1 = """
     [1, '8 References']
 ]
 """
-client = getQwenClient()
+# client = getQwenClient()
 
-generated_survey_paper = generate_survey_paper(outline1, context, client)
-print("Generated Survey Paper:\n", generated_survey_paper)
+# generated_survey_paper = generate_survey_paper(outline1, context, client)
+# print("Generated Survey Paper:\n", generated_survey_paper)
 
 # generated_introduction = generate_introduction(generated_survey_paper, client)
 # print("\nGenerated Introduction:\n", generated_introduction)

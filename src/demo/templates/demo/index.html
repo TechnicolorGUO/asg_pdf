@@ -516,6 +516,7 @@ FONTS & ICONS
 <script src="{% static 'scripts/bootstrap.min.js' %}"></script>
 <script src="{% static 'scripts/jquery.nicescroll.min.js' %}"></script>
 <script src="{% static 'scripts/evenfly.js' %}"></script>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 {% block script %}
 <script>
 	function deleteFiles() {
@@ -1054,7 +1055,11 @@ function select_sections() {
 
 
     }
-
+	marked.setOptions({
+            sanitize: true,
+            // 可选：你还可以启用其他选项，如 smartypants
+            smartypants: true
+        });
 	function display_survey() {
     // 从 views 获取 survey_id
     $.ajax({
@@ -1070,23 +1075,28 @@ function select_sections() {
           method: 'GET',
           dataType: 'json',
           success: function(surveyData) {
-            // 显示 Survey 标题
-            var topic = document.getElementById("topic_input_box").value;
-            document.getElementById("survey_content").innerHTML += "<h1>A Survey of " + topic + "</h1>";
+			document.getElementById("survey_content").innerHTML = "";
 
-            // 显示 Survey 内容
-            if (typeof surveyData.content === 'object') {
-			document.getElementById("survey_content").innerHTML += "<p>" + JSON.stringify(surveyData.content) + "</p>";
-			} else {
-			document.getElementById("survey_content").innerHTML += "<p>" + surveyData.content + "</p>";
-			}
+			// 显示 Survey 标题
+			var topic = document.getElementById("topic_input_box").value || "Default Topic";
+			var surveyTitleMarkdown = "# A Survey of " + topic;
+			var surveyTitleHTML = marked.parse(surveyTitleMarkdown);
+			document.getElementById("survey_content").innerHTML += surveyTitleHTML;
 
-            // 显示 References 标题
-            document.getElementById("survey_content").innerHTML += "<h2 style='padding: 0px; color: black'>References</h2>";
+			// 显示 Survey 内容
+			var contentMarkdown = surveyData.content || "No content available.";
+			var contentHTML = marked.parse(contentMarkdown);
+			document.getElementById("survey_content").innerHTML += contentHTML;
 
-            // 显示 References 的内容
-            document.getElementById("survey_content").innerHTML += surveyData.references;
+			// 显示 References 标题
+			var referencesTitleMarkdown = "## References";
+			var referencesTitleHTML = marked.parse(referencesTitleMarkdown);
+			document.getElementById("survey_content").innerHTML += referencesTitleHTML;
 
+			// 显示 References 的内容
+			var referencesMarkdown = surveyData.references || "No references available.";
+			var referencesHTML = marked.parse(referencesMarkdown);
+			document.getElementById("survey_content").innerHTML += referencesHTML;
             // 显示 Survey 区域
             $("#survey").attr("style", "display:inline;");
           },
